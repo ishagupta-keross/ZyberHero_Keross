@@ -1,0 +1,141 @@
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "client"
+}
+
+datasource db {
+  provider = "sqlite" // or "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Child {
+  id        Int       @id @default(autoincrement())
+  name      String
+  age       Int?
+  gender    String? // Male / Female / Other (or your own values)
+  dob       DateTime? // Date of Birth
+  phone     String? // Phone number
+  createdAt DateTime  @default(now())
+
+  devices   Device[]
+  safeZones SafeZone[]
+
+  @@map("children")
+}
+
+model Device {
+  id          Int      @id @default(autoincrement())
+  deviceUuid  String   @unique // UUID that the agent generates and stores locally (stable identifier)
+  macAddress  String?  @unique // optional, not always reliable (virtual NICs, VPNs)
+  machineName String?
+  userName    String?
+  os          String?
+  lastSeen    DateTime @default(now())
+  childId     Int?
+  child       Child?   @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  activityLogs    ActivityLog[]
+  controlCommands ControlCommand[]
+  liveAppStatuses LiveAppStatus[]
+  alerts          Alert[]
+  locations       Location[]
+
+  @@index([macAddress])
+  @@index([deviceUuid])
+  @@map("devices")
+}
+
+model ActivityLog {
+  id              Int       @id @default(autoincrement())
+  timestamp       DateTime  @default(now())
+  localTimestamp  DateTime?
+  appName         String
+  windowTitle     String
+  durationSeconds Int
+  executablePath  String?
+  screenTime      Boolean   @default(false)
+
+  deviceId Int
+  device   Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId])
+  @@index([timestamp])
+  @@map("activity_logs")
+}
+
+model ControlCommand {
+  id        Int      @id @default(autoincrement())
+  schedule  String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  appName String
+  action  String
+
+  deviceId Int
+  device   Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@unique([deviceId, appName, action])
+  @@index([deviceId])
+  @@map("control_commands")
+}
+
+model LiveAppStatus {
+  id          Int      @id @default(autoincrement())
+  appName     String
+  windowTitle String
+  isRunning   Boolean  @default(false)
+  lastSeen    DateTime @default(now())
+
+  deviceId Int
+  device   Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@unique([deviceId, appName])
+  @@index([deviceId])
+  @@map("live_app_status")
+}
+
+model Alert {
+  id        Int      @id @default(autoincrement())
+  timestamp DateTime @default(now())
+  appName   String
+  type      String
+  details   String
+
+  deviceId Int
+  device   Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId])
+  @@map("alerts")
+}
+
+model Location {
+  id        Int      @id @default(autoincrement())
+  timestamp DateTime @default(now())
+  latitude  Float
+  longitude Float
+  accuracy  Float?
+  altitude  Float?
+
+  deviceId Int
+  device   Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId])
+  @@index([timestamp])
+  @@map("locations")
+}
+
+model SafeZone {
+  id        Int      @id @default(autoincrement())
+  childId   Int
+  name      String
+  latitude  Float
+  longitude Float
+  radius    Int // meters, e.g., 200m around school
+  createdAt DateTime @default(now())
+
+  child Child @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@index([childId])
+  @@map("safe_zones")
+}

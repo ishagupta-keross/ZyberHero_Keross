@@ -23,42 +23,42 @@ import org.springframework.data.domain.Pageable;
 @RequiredArgsConstructor
 public class EventController implements EventApi {
 
-    @Autowired
     private final EventService eventService;
-
     @Override
-    public ResponseEntity<EventResponseDto> createEvent(@RequestHeader("Authorization") String accessToken,
-            @RequestBody EventCreateRequestDto eventRequestDto) {
-        EventResponseDto createdEvent = eventService.createEvent(eventRequestDto);
-        return ResponseEntity.created(null).body(createdEvent);
+    public ResponseEntity<EventResponseDto> createEvent(String accessToken, EventCreateRequestDto eventRequestDto) { // api function inplementation
+        // TODO Auto-generated method stub
+        // throw new UnsupportedOperationException("Unimplemented method 'createEvent'");
+
+        EventResponseDto createdEvent = eventService.createEvent(eventRequestDto); // service layer function call
+        return ResponseEntity.status(201).body(createdEvent);
     }
 
     @Override
-    public ResponseEntity<Page<EventResponseDto>> getAllEvents(@RequestHeader("Authorization") String accessToken, Pageable pageable) {
-
-        Page<EventResponseDto> events = eventService.getAllEvents(pageable);
-        return ResponseEntity.ok(events);
+    public ResponseEntity<Page<EventResponseDto>> getAllEvents(String accessToken, Pageable pageable) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getAllEvents'");
     }
 
     @Override
-    public ResponseEntity<Page<EventResponseDto>> getEventsByIdentifier(
-            @RequestHeader("Authorization") String accessToken, @PathVariable UUID sourceIdentifier, Pageable pageable) {
-        Page<EventResponseDto> events = eventService.getEventsByIdentifier(sourceIdentifier, pageable);
-        return ResponseEntity.ok(events);
+    public ResponseEntity<Page<EventResponseDto>> getEventsByIdentifier(String accessToken, UUID sourceIdentifier,
+            Pageable pageable) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getEventsByIdentifier'");
     }
 
     @Override
-    public ResponseEntity<EventResponseDto> getEventById(@RequestHeader("Authorization") String accessToken,
-            @PathVariable("eventId") UUID eventId) {
-        EventResponseDto event = eventService.getEventById(eventId);
-        return ResponseEntity.ok(event);
+    public ResponseEntity<EventResponseDto> getEventById(String accessToken, UUID eventId) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getEventById'");
     }
 
     @Override
-    public ResponseEntity<EventResponseDto> updateEvent(@RequestHeader("Authorization") String accessToken,
-            @PathVariable UUID eventId, @RequestBody EventCreateRequestDto eventRequestDto) {
-        EventResponseDto updatedEvent = eventService.updateEvent(eventId, eventRequestDto);
-        return ResponseEntity.ok(updatedEvent);
+    public ResponseEntity<EventResponseDto> updateEvent(String accessToken, UUID eventId,
+            EventCreateRequestDto eventRequestDto) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'updateEvent'");
     }
+
+  
 
 }

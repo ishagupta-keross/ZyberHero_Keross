@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 
-const API_BASE = 'http://localhost:3001/api';
+const API_BASE = 'http://localhost:8060/api';
 
 interface ActivityApp {
   app: string;

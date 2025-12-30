@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import dynamic from 'next/dynamic';
 
-const API_BASE = 'http://localhost:3001/api';
+const API_BASE = 'http://localhost:8060/api';
 
 interface LocationData {
   id: number;

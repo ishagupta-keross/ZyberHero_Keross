@@ -21,7 +21,7 @@ public class ZyberheroApplication {
 
     @PostConstruct
     public void init() {
-        // Fixes the "Asia/Calcutta" error by forcing the modern timezone name
+        // Fixes the "Asia/Calcutta" error by forcing the modern timezone   
         TimeZone.setDefault(TimeZone.getTimeZone("Asia/Kolkata"));
     }
 

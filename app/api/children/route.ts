@@ -3,7 +3,7 @@
 import { baseApiRequest } from "@/app/utils/apiRequests/baseApiRequest";
 import { NextRequest, NextResponse } from "next/server";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080/api";
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8060/api";
 
 /**
  * Server-side route handler for child operations

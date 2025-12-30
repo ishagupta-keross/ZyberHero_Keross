@@ -10,5 +10,5 @@ public class ChildCreateRequestDto {
     private String dob; // YYYY-MM-DD
     private String phone;
     private Long deviceId; // optional: device to assign
-    private String parentId;
+    // private String parentId;
 }

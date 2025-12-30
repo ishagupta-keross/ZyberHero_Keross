@@ -28,7 +28,12 @@ import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+// NOTE: client-side page uses browser fetch. Do not import server-only helpers here.
 
+// Backend API base (used for direct backend calls). For the children resource
+// we proxy through our Next server route at `/api/children` so the server-side
+// `baseApiRequest` can attach tokens from cookies. Keep other backend calls
+// pointed at the backend directly if there are no proxy routes.
 const API_BASE = 'http://localhost:8060/api';
 
 const addChildSchema = z.object({
@@ -40,7 +45,11 @@ const addChildSchema = z.object({
 });
 
 type AddChildForm = z.infer<typeof addChildSchema>;
-const API_ENDPOINT = `${API_BASE}/children`;
+// Use the Next.js server route which proxies to the backend and attaches auth
+// tokens from cookies: app/api/children/route.ts
+const API_ENDPOINT = '/api/children';
+
+
 
 interface Child {
   id: string | number;
@@ -117,11 +126,20 @@ export default function ParentDashboard() {
   const fetchChildren = useCallback(async () => {
     setIsLoadingChildren(true);
     try {
-      const response = await fetch(API_ENDPOINT);
-      if (!response.ok) {
-        throw new Error('Failed to fetch children');
+      // Use client-side fetch here (this is a client component). If your API requires
+      // Authorization via Bearer token, include it here (e.g. from localStorage) or
+      // ensure your backend accepts cookies and CORS is configured.
+      const res = await fetch(API_ENDPOINT, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+      const text = await res.text();
+      if (!res.ok) {
+        let message = `Failed to fetch children: ${res.status} ${res.statusText}`;
+        try {
+          const parsed = JSON.parse(text);
+          message = parsed.message || message;
+        } catch {}
+        throw new Error(message);
       }
-      const data = await response.json();
+      const data = text ? JSON.parse(text) : {};
       const childrenArray = data.children || data || [];
       const mappedChildren: Child[] = childrenArray.map((child: any) => ({
         id: child.id || child.deviceId || `child-${Date.now()}`,
@@ -137,7 +155,7 @@ export default function ParentDashboard() {
         badges: child.badges || [],
         devices: child.devices || [],
       }));
-      setChildrenList(mappedChildren);
+  setChildrenList(mappedChildren);
       if (mappedChildren.length > 0 && !selectedChild) {
         setSelectedChild(mappedChildren[0]);
       }
@@ -466,20 +484,22 @@ export default function ParentDashboard() {
     };
 
     try {
-      const response = await fetch(API_ENDPOINT, {
+      // Client-side POST: read text then parse JSON to avoid double .json() calls
+      const res = await fetch(API_ENDPOINT, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Failed to add child: ${response.statusText}`);
+      const text = await res.text();
+      if (!res.ok) {
+        let message = `Failed to add child: ${res.status} ${res.statusText}`;
+        try {
+          const parsed = JSON.parse(text);
+          message = parsed.message || message;
+        } catch {}
+        throw new Error(message);
       }
-
-      const newChildData = await response.json();
+      const newChildData = text ? JSON.parse(text) : {};
 
       const child: Child = {
         id: newChildData.id || newChildData.deviceId || `child-${Date.now()}`,
@@ -682,7 +702,7 @@ export default function ParentDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold">{screenTimeSummary.totalScreenTime}</div>
-                  <p className="text-xs text-muted-foreground">Today's total</p>
+                  <p className="text-xs text-muted-foreground">Today&apos;s total</p>
                 </CardContent>
               </Card>
 
@@ -713,7 +733,7 @@ export default function ParentDashboard() {
               <Card>
                 <CardHeader>
                   <CardTitle>Screen Time Summary</CardTitle>
-                  <CardDescription>Today's usage breakdown</CardDescription>
+                  <CardDescription>Today&apos;s usage breakdown</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
@@ -826,7 +846,7 @@ export default function ParentDashboard() {
                     <Activity className="w-6 h-6" />
                     <div>
                       <CardTitle>Activity Logs</CardTitle>
-                      <CardDescription>Today's app usage for {selectedChild.name}</CardDescription>
+                      <CardDescription>Today&apos;s app usage for {selectedChild.name}</CardDescription>
                     </div>
                   </div>
                   <div className="flex items-center gap-4 text-sm">

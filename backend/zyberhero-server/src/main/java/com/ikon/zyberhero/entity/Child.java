@@ -33,7 +33,7 @@ public class Child {
 
     private String phone;
 
-    private String parentId;
+    // private String parentId;
 
     private LocalDateTime createdAt;
 }

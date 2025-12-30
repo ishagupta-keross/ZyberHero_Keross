@@ -26,7 +26,7 @@ public class ChildMapper {
             c.setDob(LocalDate.parse(dto.getDob()));
         }
         c.setPhone(dto.getPhone());
-        c.setParentId(dto.getParentId());
+        // c.setParentId(dto.getParentId());
         c.setCreatedAt(LocalDateTime.now());
         return c;
     }

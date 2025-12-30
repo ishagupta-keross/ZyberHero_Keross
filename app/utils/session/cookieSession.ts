@@ -26,13 +26,15 @@ export async function setCookieSession(
 // }
  cookieStore.set(cookiePrefix + sessionName, data, {
     httpOnly: false, // or true if you don't need JS access
-  sameSite: "none",            // IMPORTANT for cross-domain cookies
-  secure: true,                // REQUIRED when sameSite=none
-  path: "/",
-  domain: process.env.NODE_ENV === "production"
-  ? process.env.NEXT_PUBLIC_COOKIE_DOMAIN: undefined,
-  expires: options?.expires,
-  maxAge: options?.maxAge
+    // For cross-site cookies in production we set sameSite='none' and secure=true.
+    // For local development (http://localhost) browsers reject Secure cookies, so
+    // relax settings to allow testing.
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    secure: process.env.NODE_ENV === 'production',
+    path: '/',
+    domain: process.env.NODE_ENV === 'production' ? process.env.NEXT_PUBLIC_COOKIE_DOMAIN : undefined,
+    expires: options?.expires,
+    maxAge: options?.maxAge,
   });
 }
 

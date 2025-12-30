@@ -1,0 +1,59 @@
+[
+  {
+    "id": "alert-1",
+    "childId": "child-1",
+    "childName": "Emma Wilson",
+    "type": "inappropriate-content",
+    "severity": "high",
+    "platform": "Instagram",
+    "sender": "unknown_user_2847",
+    "timestamp": "2025-10-14T09:45:00Z",
+    "device": "iPhone 12",
+    "contentType": "image",
+    "preview": "Blurred inappropriate image",
+    "status": "new",
+    "reason": "Flagged for inappropriate content and suspicious sender",
+    "metadata": {
+      "ipAddress": "192.168.1.45",
+      "deviceFingerprint": "iOS-15.2-iPhone12"
+    }
+  },
+  {
+    "id": "alert-2",
+    "childId": "child-2",
+    "childName": "Lucas Martinez",
+    "type": "suspicious-contact",
+    "severity": "critical",
+    "platform": "Discord",
+    "sender": "gamer_friend_99",
+    "timestamp": "2025-10-14T08:20:00Z",
+    "device": "Samsung Galaxy S21",
+    "contentType": "text",
+    "preview": "Suspicious message asking for personal information",
+    "status": "new",
+    "reason": "Contact attempting to gather personal information",
+    "metadata": {
+      "ipAddress": "Unknown",
+      "deviceFingerprint": "Android-12-GalaxyS21"
+    }
+  },
+  {
+    "id": "alert-3",
+    "childId": "child-1",
+    "childName": "Emma Wilson",
+    "type": "blocked-content",
+    "severity": "medium",
+    "platform": "TikTok",
+    "sender": "content_creator_xyz",
+    "timestamp": "2025-10-13T16:30:00Z",
+    "device": "iPhone 12",
+    "contentType": "video",
+    "preview": "Age-inappropriate video content",
+    "status": "reviewed",
+    "reason": "Content not appropriate for age group",
+    "metadata": {
+      "ipAddress": "192.168.1.45",
+      "deviceFingerprint": "iOS-15.2-iPhone12"
+    }
+  }
+]

@@ -1,0 +1,58 @@
+[
+  {
+    "id": "case-1",
+    "alertId": "alert-2",
+    "childId": "child-2",
+    "childName": "Lucas Martinez",
+    "status": "open",
+    "priority": "high",
+    "createdAt": "2025-10-14T09:00:00Z",
+    "investigatorId": "investigator-1",
+    "predatorProfile": {
+      "suspectId": "suspect-4829",
+      "platform": "Discord",
+      "username": "gamer_friend_99",
+      "accountAge": "3 months",
+      "commonPatterns": ["befriending minors", "requesting personal info", "grooming behavior"],
+      "relatedCases": 2,
+      "devices": ["Desktop-Windows-11", "Mobile-Android"],
+      "timeline": [
+        {"date": "2025-10-10", "event": "First contact with victim"},
+        {"date": "2025-10-12", "event": "Attempted to move conversation to private chat"},
+        {"date": "2025-10-14", "event": "Requested personal information - FLAGGED"}
+      ]
+    },
+    "notes": [
+      {
+        "id": "note-1",
+        "author": "Det. James Rodriguez",
+        "timestamp": "2025-10-14T09:30:00Z",
+        "content": "Suspect matches known grooming patterns. Escalating to full investigation."
+      }
+    ]
+  },
+  {
+    "id": "case-2",
+    "alertId": "alert-1",
+    "childId": "child-1",
+    "childName": "Emma Wilson",
+    "status": "investigating",
+    "priority": "critical",
+    "createdAt": "2025-10-14T10:00:00Z",
+    "investigatorId": "investigator-1",
+    "predatorProfile": {
+      "suspectId": "suspect-3294",
+      "platform": "Instagram",
+      "username": "unknown_user_2847",
+      "accountAge": "1 week",
+      "commonPatterns": ["new account", "inappropriate content", "targeting children"],
+      "relatedCases": 0,
+      "devices": ["Mobile-iOS"],
+      "timeline": [
+        {"date": "2025-10-14", "event": "Account created"},
+        {"date": "2025-10-14", "event": "Sent inappropriate content - BLOCKED"}
+      ]
+    },
+    "notes": []
+  }
+]

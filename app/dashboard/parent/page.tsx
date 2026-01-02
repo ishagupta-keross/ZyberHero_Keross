@@ -139,8 +139,33 @@ export default function ParentDashboard() {
         } catch {}
         throw new Error(message);
       }
-      const data = text ? JSON.parse(text) : {};
-      const childrenArray = data.children || data || [];
+      let data: any = {};
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch (err) {
+        console.error('Failed to parse children response:', err, 'text:', text);
+        data = {};
+      }
+
+      // Normalize response to an array of children. The backend may return:
+      // - { children: [...] }
+      // - [...]
+      // - a single child object { id, name, ... }
+      // - empty / unexpected shapes
+      let childrenArray: any[] = [];
+      if (Array.isArray(data.children)) {
+        childrenArray = data.children;
+      } else if (Array.isArray(data)) {
+        childrenArray = data;
+      } else if (data && Array.isArray((data as any).child)) {
+        childrenArray = (data as any).child;
+      } else if (data && typeof data === 'object' && (data.id || data.name)) {
+        // single child object
+        childrenArray = [data];
+      } else {
+        childrenArray = [];
+      }
+
       const mappedChildren: Child[] = childrenArray.map((child: any) => ({
         id: child.id || child.deviceId || `child-${Date.now()}`,
         name: child.name,

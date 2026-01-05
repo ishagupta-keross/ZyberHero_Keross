@@ -505,7 +505,7 @@ export default function ParentDashboard() {
       gender: gender,
       dob: new Date(dob).toISOString().split('T')[0],
       phone: phone || null,
-      parentId: user.id,
+      // parentId: user.id,
     };
 
     try {

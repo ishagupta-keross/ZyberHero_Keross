@@ -51,6 +51,7 @@ export async function clearCookieSession(sessionName: string) {
   cookieStore.delete(cookiePrefix + sessionName);
 }
 
+
 export async function clearAllCookieSession() {
   const cookieStore = await cookies();
   cookieStore.getAll().forEach((cookie) => {

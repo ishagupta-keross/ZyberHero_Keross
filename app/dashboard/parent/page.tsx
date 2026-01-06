@@ -26,6 +26,7 @@ const LocationMap = dynamic(
 );
 import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
+import { baseApiRequest } from '@/app/utils/apiRequests/baseApiRequest';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 // NOTE: client-side page uses browser fetch. Do not import server-only helpers here.
@@ -126,32 +127,16 @@ export default function ParentDashboard() {
   const fetchChildren = useCallback(async () => {
     setIsLoadingChildren(true);
     try {
-      // Use client-side fetch here (this is a client component). If your API requires
-      // Authorization via Bearer token, include it here (e.g. from localStorage) or
-      // ensure your backend accepts cookies and CORS is configured.
-      const res = await fetch(API_ENDPOINT, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
-      const text = await res.text();
-      if (!res.ok) {
-        let message = `Failed to fetch children: ${res.status} ${res.statusText}`;
-        try {
-          const parsed = JSON.parse(text);
-          message = parsed.message || message;
-        } catch {}
-        throw new Error(message);
-      }
-      let data: any = {};
-      try {
-        data = text ? JSON.parse(text) : {};
-      } catch (err) {
-        console.error('Failed to parse children response:', err, 'text:', text);
-        data = {};
+      
+      const response = await baseApiRequest(`${API_BASE}/children`, { method: 'GET' }, { isAccessTokenRequird: true });
+
+      if (response && (response as any).status === 'Failure') {
+        throw new Error((response as any).message || 'Failed to fetch children');
       }
 
-      // Normalize response to an array of children. The backend may return:
-      // - { children: [...] }
-      // - [...]
-      // - a single child object { id, name, ... }
-      // - empty / unexpected shapes
+      // response may be an object, array, or wrapped under `children`
+      const data: any = response ?? {};
+
       let childrenArray: any[] = [];
       if (Array.isArray(data.children)) {
         childrenArray = data.children;
@@ -195,7 +180,7 @@ export default function ParentDashboard() {
   const fetchActivityData = useCallback(async (childId: number | string, isInitialLoad = true) => {
     if (isInitialLoad) setIsLoadingActivity(true);
     try {
-      const response = await fetch(`${API_BASE}/summary/daily-comparison?childId=${childId}`);
+      const response = await fetch(`/summary/daily-comparison?childId=${childId}`);
       if (!response.ok) throw new Error('Failed to fetch activity');
       const data = await response.json();
       
@@ -499,32 +484,21 @@ export default function ParentDashboard() {
     setIsSubmitting(true);
     const { name, age, gender, dob, phone } = data;
 
-    const payload = {
-      name,
-      age: age,
-      gender: gender,
-      dob: new Date(dob).toISOString().split('T')[0],
-      phone: phone || null,
-      // parentId: user.id,
-    };
+    const payload = { name, age, gender, dob, phone };
 
     try {
-      // Client-side POST: read text then parse JSON to avoid double .json() calls
-      const res = await fetch(API_ENDPOINT, {
+      // Use the server action to create a child. It attaches tokens server-side.
+      const result = await baseApiRequest(`${API_BASE}/children`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
-      });
-      const text = await res.text();
-      if (!res.ok) {
-        let message = `Failed to add child: ${res.status} ${res.statusText}`;
-        try {
-          const parsed = JSON.parse(text);
-          message = parsed.message || message;
-        } catch {}
-        throw new Error(message);
+      }, { isAccessTokenRequird: true });
+
+      if (result && (result as any).status === 'Failure') {
+        throw new Error((result as any).message || 'Failed to add child');
       }
-      const newChildData = text ? JSON.parse(text) : {};
+
+      const newChildData = result ?? {};
 
       const child: Child = {
         id: newChildData.id || newChildData.deviceId || `child-${Date.now()}`,
@@ -545,8 +519,8 @@ export default function ParentDashboard() {
       setShowAddChild(false);
       reset();
       toast.success(`Child "${name}" successfully added!`);
-      
-      fetchChildren();
+
+      await fetchChildren();
 
     } catch (error: any) {
       console.error('API Error:', error);

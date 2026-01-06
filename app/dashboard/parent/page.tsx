@@ -180,20 +180,53 @@ export default function ParentDashboard() {
   const fetchActivityData = useCallback(async (childId: number | string, isInitialLoad = true) => {
     if (isInitialLoad) setIsLoadingActivity(true);
     try {
-      const response = await fetch(`/summary/daily-comparison?childId=${childId}`);
-      if (!response.ok) throw new Error('Failed to fetch activity');
-      const data = await response.json();
-      
+      // Determine whether to call by deviceId or childId. Backend expects
+      // numeric Long values for these params. Avoid sending placeholder ids
+      // like "child-..." which will cause server-side parsing errors (500).
+      const childObj = childrenList.find((c) => c.id === childId);
+      let query = '';
+      const firstDeviceId = childObj?.devices?.[0]?.id;
+      const numericChildId = typeof childId === 'number' ? childId : Number(childId);
+      if (firstDeviceId && Number.isFinite(Number(firstDeviceId))) {
+        query = `deviceId=${firstDeviceId}`;
+      } else if (Number.isFinite(numericChildId)) {
+        query = `childId=${numericChildId}`;
+      } else {
+        // Don't throw here — new local children may have placeholder ids and
+        // no linked devices yet. Gracefully skip fetching activity to avoid
+        // crashing the UI; show empty activity state instead.
+        console.warn('Skipping activity fetch: invalid child id and no device available', { childId, childObj });
+        // Ensure we set loading state appropriately and return early.
+        if (isInitialLoad) setIsLoadingActivity(false);
+        setActivityApps([]);
+        setLiveApps([]);
+        setScreenTimeSummary({ totalScreenTime: '0m' });
+        return;
+      }
+
+      const resp = await baseApiRequest(`${API_BASE}/summary/daily-comparison?${query}`, { method: 'GET' }, { isAccessTokenRequird: true });
+      if (resp && (resp as any).status === 'Failure') {
+        throw new Error((resp as any).message || 'Failed to fetch activity');
+      }
+      const data: any = resp ?? {};
+
+      console.log("Activity Data:------------------------", data);
+
       const child = childrenList.find(c => c.id === childId);
       const deviceIds = child?.devices?.map(d => d.id) || [];
-      
+
       let liveAppsList: LiveApp[] = [];
       for (const deviceId of deviceIds) {
         try {
-          const liveRes = await fetch(`${API_BASE}/live-status?deviceId=${deviceId}`);
-          if (liveRes.ok) {
-            const liveData = await liveRes.json();
+          const liveResp = await baseApiRequest(`${API_BASE}/live-status?deviceId=${deviceId}`, { method: 'GET' }, { isAccessTokenRequird: true });
+          if (liveResp && (liveResp as any).status === 'Failure') {
+            continue;
+          }
+          const liveData = liveResp ?? [];
+          if (Array.isArray(liveData)) {
             liveAppsList = [...liveAppsList, ...liveData];
+          } else if (liveData) {
+            liveAppsList = [...liveAppsList, liveData];
           }
         } catch {}
       }
@@ -224,10 +257,13 @@ export default function ParentDashboard() {
       let liveAppsList: LiveApp[] = [];
       for (const deviceId of deviceIds) {
         try {
-          const liveRes = await fetch(`${API_BASE}/live-status?deviceId=${deviceId}`);
-          if (liveRes.ok) {
-            const liveData = await liveRes.json();
+          const liveResp = await baseApiRequest(`${API_BASE}/live-status?deviceId=${deviceId}`, { method: 'GET' }, { isAccessTokenRequird: true });
+          if (liveResp && (liveResp as any).status === 'Failure') continue;
+          const liveData = liveResp ?? [];
+          if (Array.isArray(liveData)) {
             liveAppsList = [...liveAppsList, ...liveData];
+          } else if (liveData) {
+            liveAppsList = [...liveAppsList, liveData];
           }
         } catch {}
       }

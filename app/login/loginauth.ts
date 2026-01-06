@@ -27,6 +27,7 @@ export async function  login(userlogin: string, password: string) {
       throw new Error(`Login failed with status ${response.status}`);
     }
     const data = await response.json();
+    console.log("Login response data:", data);
     const { accessToken, refreshToken, expiresIn, refreshExpiresIn } = data;
     
 

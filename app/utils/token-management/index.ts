@@ -7,10 +7,14 @@ interface AccessTokenOptionsProps {
   isSetToken?: boolean;
 }
 export async function getValidAccessToken(options?: AccessTokenOptionsProps): Promise<string | null> {
+  
   const accessToken = await getCookieSession("accessToken");
   const refreshToken = await getCookieSession("refreshToken");
-
+  console.log("Access token from cookie:", accessToken);
+  console.log("Refresh token from cookie:", refreshToken);
+  
   if (accessToken) {
+    console.log("Access token is getting from cookie:", accessToken);
     return accessToken;
   }
 
@@ -18,10 +22,12 @@ export async function getValidAccessToken(options?: AccessTokenOptionsProps): Pr
     // Refresh token is valid, call the refresh token API
     const newAccessToken = await refreshAccessToken(refreshToken, options?.isSetToken);
     if (newAccessToken) {
+      console.log("Access token refreshed: getting", newAccessToken);
       return newAccessToken; // Return the new access token
     }
   }
   if (!options?.isNotLogOutWhenExpire) {
+    console.log("Both tokens are invalid, logging out user");
     await logOut();
   }
   // If both tokens are invalid, return null
@@ -92,5 +98,7 @@ async function refreshAccessToken(
 
 export async function logOut() {
   await clearAllCookieSession();
-  redirect(process.env.IKON_LOGIN_PAGE_URL || process.env.DEV_TOOL_BASE_PATH + "/signup.html")
+  // redirect(process.env.IKON_LOGIN_PAGE_URL || process.env.DEV_TOOL_BASE_PATH + "/signup.html")
+  redirect(process.env.IKON_LOGIN_PAGE_URL || "/login")
+
 }

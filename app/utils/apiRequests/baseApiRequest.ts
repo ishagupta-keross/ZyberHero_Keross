@@ -3,6 +3,7 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { getValidAccessToken, logOut } from "../token-management";
 import { getCookieSession } from "../session/cookieSession";
+import { json } from "node:stream/consumers";
 
 export interface ExtraOptionsProps {
   isAccessTokenRequird?: boolean;
@@ -55,7 +56,7 @@ export const baseApiRequest = async (
 
     const response = await fetch(url, init);
 
-    console.log("API Response:--------------------", response);
+    console.log("API Response:--------------------", JSON.stringify(response));
 
     if (!response.ok) {
       // Try to capture any error body to make debugging easier

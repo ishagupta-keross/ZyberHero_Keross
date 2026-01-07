@@ -7,7 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import dynamic from 'next/dynamic';
 
-const API_BASE = 'http://localhost:8060/api';
+import { baseApiRequest } from '@/app/utils/apiRequests/baseApiRequest';
+
+const API_BASE = process.env.NEXT_PUBLIC_IKON_API_URL || 'http://localhost:8060/api';
 
 interface LocationData {
   id: number;
@@ -176,22 +178,41 @@ export function LocationMap({ childId, childName, deviceIds }: LocationMapProps)
       // Fetch latest location from first device
       const deviceId = deviceIds[0];
       
-      const [latestRes, historyRes] = await Promise.all([
-        fetch(`${API_BASE}/location/latest?deviceId=${deviceId}`),
-        fetch(`${API_BASE}/location/history?deviceId=${deviceId}&limit=20`)
+      const [latestResp, historyResp] = await Promise.all([
+        baseApiRequest(
+          `${API_BASE}/location/latest?deviceId=${deviceId}`,
+          { method: 'GET' },
+          { isAccessTokenRequird: true }
+        ),
+        baseApiRequest(
+          `${API_BASE}/location/history?deviceId=${deviceId}&limit=20`,
+          { method: 'GET' },
+          { isAccessTokenRequird: true }
+        ),
       ]);
 
-      if (latestRes.ok) {
-        const latestData = await latestRes.json();
-        setCurrentLocation(latestData);
-      } else if (latestRes.status === 404) {
-        setCurrentLocation(null);
+      // latest endpoint
+      if (latestResp && (latestResp as any).status === 'Failure') {
+        const msg = (latestResp as any).message || 'Failed to fetch latest location';
+        // If backend returns 404 for no data, some wrappers treat it as error text.
+        // We'll just show a friendly message.
+        if (String(msg).includes('404')) {
+          setCurrentLocation(null);
+        } else {
+          throw new Error(msg);
+        }
+      } else {
+        // latestResp might be null/undefined if no data
+        setCurrentLocation((latestResp as any) ?? null);
       }
 
-      if (historyRes.ok) {
-        const historyData = await historyRes.json();
-        setLocationHistory(historyData);
+      // history endpoint
+      if (historyResp && (historyResp as any).status === 'Failure') {
+        throw new Error((historyResp as any).message || 'Failed to fetch location history');
       }
+
+      const historyData: any = historyResp ?? [];
+      setLocationHistory(Array.isArray(historyData) ? historyData : historyData?.history ?? []);
 
     } catch (err) {
       console.error('Error fetching location:', err);

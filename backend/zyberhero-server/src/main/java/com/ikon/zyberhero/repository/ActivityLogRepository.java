@@ -21,4 +21,10 @@ public interface ActivityLogRepository extends JpaRepository<ActivityLog, Long> 
 	@Query("SELECT COALESCE(SUM(a.durationSeconds),0) FROM ActivityLog a WHERE a.timestamp >= :start AND a.timestamp < :end AND a.screenTime = :screen AND (:deviceIdsSize = 0 OR a.deviceId IN :deviceIds)")
 	Long sumDurationBetweenForDevices(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end, @Param("screen") boolean screen, @Param("deviceIds") List<Long> deviceIds, @Param("deviceIdsSize") int deviceIdsSize);
 
+	@Query("SELECT MAX(a.localTimestamp) FROM ActivityLog a WHERE (:deviceIdsSize = 0 OR a.deviceId IN :deviceIds)")
+	LocalDateTime findLatestLocalTimestampForDevices(@Param("deviceIds") List<Long> deviceIds, @Param("deviceIdsSize") int deviceIdsSize);
+
+	@Query("SELECT MAX(a.timestamp) FROM ActivityLog a WHERE (:deviceIdsSize = 0 OR a.deviceId IN :deviceIds)")
+	LocalDateTime findLatestTimestampForDevices(@Param("deviceIds") List<Long> deviceIds, @Param("deviceIdsSize") int deviceIdsSize);
+
 }

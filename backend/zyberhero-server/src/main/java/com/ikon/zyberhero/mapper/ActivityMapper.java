@@ -1,6 +1,7 @@
 package com.ikon.zyberhero.mapper;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 
 import org.springframework.stereotype.Component;
@@ -15,8 +16,11 @@ public class ActivityMapper {
     public ActivityLog mapFromDto(ActivityCreateRequestDto req) {
         if (req == null) return null;
         ActivityLog log = new ActivityLog();
+        // Store `timestamp` as UTC-based LocalDateTime (server canonical time).
         log.setTimestamp(req.getTimestamp() != null ? LocalDateTime.ofInstant(req.getTimestamp(), ZoneOffset.UTC) : LocalDateTime.now());
-        log.setLocalTimestamp(req.getLocalTimestamp() != null ? LocalDateTime.ofInstant(req.getLocalTimestamp(), ZoneOffset.UTC) : null);
+
+   
+        log.setLocalTimestamp(req.getLocalTimestamp() != null ? LocalDateTime.ofInstant(req.getLocalTimestamp(), ZoneId.systemDefault()) : null);
         log.setAppName(req.getAppName());
         log.setWindowTitle(req.getWindowTitle() == null ? "" : req.getWindowTitle());
         log.setDurationSeconds(req.getDurationSeconds() == null ? 0 : req.getDurationSeconds());
@@ -30,8 +34,8 @@ public class ActivityMapper {
         if (l == null) return null;
         ActivityResponseDto d = new ActivityResponseDto();
         d.setId(l.getId());
-        d.setTimestamp(l.getTimestamp() == null ? null : l.getTimestamp().atZone(ZoneOffset.systemDefault()).toInstant());
-        d.setLocalTimestamp(l.getLocalTimestamp() == null ? null : l.getLocalTimestamp().atZone(ZoneOffset.systemDefault()).toInstant());
+        d.setTimestamp(l.getTimestamp() == null ? null : l.getTimestamp().atZone(ZoneId.systemDefault()).toInstant());
+        d.setLocalTimestamp(l.getLocalTimestamp() == null ? null : l.getLocalTimestamp().atZone(ZoneId.systemDefault()).toInstant());
         d.setAppName(l.getAppName());
         d.setWindowTitle(l.getWindowTitle());
         d.setDurationSeconds(l.getDurationSeconds());

@@ -1,7 +1,7 @@
 package com.ikon.zyberhero.service;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,28 +28,54 @@ public class SummaryService {
 
     private static class AppTimes { int focused = 0; int screen = 0; String latestWindowTitle = null; }
 
-    private LocalDateTime startOfDay(String date) {
-        if (date == null) {
-            LocalDate now = LocalDate.now();
-            return now.atStartOfDay();
+    private LocalDateTime startOfDay(String date, List<Long> deviceIds) {
+        // If caller provides date, always use it.
+        if (date != null) {
+            LocalDate d = LocalDate.parse(date);
+            return d.atStartOfDay();
         }
-        LocalDate d = LocalDate.parse(date);
-        return d.atStartOfDay();
+
+        // If date is NOT provided, choose the day of the most recent activity for the device(s).
+        // This lets clients call /daily-comparison with only deviceUuid/deviceId.
+        if (deviceIds != null && !deviceIds.isEmpty()) {
+            List<Long> ids = deviceIds;
+            int size = ids.size();
+            LocalDateTime latestLocal = activityLogRepository.findLatestLocalTimestampForDevices(ids, size);
+            if (latestLocal != null) {
+                return latestLocal.toLocalDate().atStartOfDay();
+            }
+            LocalDateTime latestUtc = activityLogRepository.findLatestTimestampForDevices(ids, size);
+            if (latestUtc != null) {
+                return latestUtc.toLocalDate().atStartOfDay();
+            }
+        }
+
+        // Fallback: server "today".
+        return LocalDate.now().atStartOfDay();
     }
 
     @Transactional(readOnly = true)
     public DailyComparisonResponseDto dailyComparison(String date, String deviceUuid, Long deviceId, Long childId) {
-        LocalDateTime start = startOfDay(date);
-        LocalDateTime end = start.plusDays(1);
-
         List<Long> deviceIds = resolveDeviceIds(deviceUuid, deviceId, childId);
 
-        List<ActivityLog> logs;
+        LocalDateTime start = startOfDay(date, deviceIds);
+        LocalDateTime end = start.plusDays(1);
+
+        // IMPORTANT: use localTimestamp when present; fall back to timestamp.
+        // This avoids "empty summary" when activities are posted with local times
+        // that fall on a different UTC day.
+        List<ActivityLog> rawLogs;
         if (deviceIds.isEmpty()) {
-            logs = activityLogRepository.findByTimestampBetweenAndDurationSecondsGreaterThan(start, end, 0);
+            rawLogs = activityLogRepository.findByTimestampBetweenAndDurationSecondsGreaterThan(start, end, 0);
         } else {
-            logs = activityLogRepository.findByTimestampBetweenAndDeviceIdInAndDurationSecondsGreaterThan(start, end, deviceIds, 0);
+            rawLogs = activityLogRepository.findByTimestampBetweenAndDeviceIdInAndDurationSecondsGreaterThan(start, end, deviceIds, 0);
         }
+
+        List<ActivityLog> logs = rawLogs.stream().filter(l -> {
+            LocalDateTime t = l.getLocalTimestamp() != null ? l.getLocalTimestamp() : l.getTimestamp();
+            if (t == null) return false;
+            return !t.isBefore(start) && t.isBefore(end);
+        }).collect(Collectors.toList());
 
         Map<String, AppTimes> appMap = new HashMap<>();
 
@@ -102,10 +128,10 @@ public class SummaryService {
 
     @Transactional(readOnly = true)
     public ScreenTimeResponseDto screenTimeTotal(String date, String deviceUuid, Long deviceId, Long childId) {
-        LocalDateTime start = startOfDay(date);
-        LocalDateTime end = start.plusDays(1);
-
         List<Long> deviceIds = resolveDeviceIds(deviceUuid, deviceId, childId);
+
+        LocalDateTime start = startOfDay(date, deviceIds);
+        LocalDateTime end = start.plusDays(1);
 
         int size = deviceIds.size();
         Long screenSum = deviceIds.isEmpty() ? activityLogRepository.sumDurationBetweenForDevice(start, end, true, null) : activityLogRepository.sumDurationBetweenForDevices(start, end, true, deviceIds, size);

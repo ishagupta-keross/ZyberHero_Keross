@@ -5,6 +5,7 @@ import { XCircle, Ban, RotateCcw, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { baseApiRequest } from '@/app/utils/apiRequests/baseApiRequest';
 
 const API_BASE = 'http://localhost:8060/api';
 
@@ -59,42 +60,31 @@ export function ActivityTable({ apps, isLoading, deviceId, onRefresh }: Activity
     }
     setLoadingActions(prev => ({ ...prev, [appName]: 'kill' }));
     try {
-      const res = await fetch(`${API_BASE}/commands/kill`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deviceId, appName }),
-      });
-      if (res.ok) {
+      const result: any = await baseApiRequest(
+        `${API_BASE}/commands/kill`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ deviceId, appName }),
+        },
+        { isAccessTokenRequird: true }
+      );
+
+      // baseApiRequest returns response *data* (usually JSON), not fetch's Response.
+      // Success payload from backend is: { success: true }
+      if (result?.success === true) {
+        console.log('Kill command succeeded:', result);
         toast.success(`Kill command sent for ${appName}`);
       } else {
-        toast.error('Failed to send kill command');
+        const msg =
+          result?.error ||
+          result?.message ||
+          'Failed to send kill command';
+        toast.error(msg);
+        console.log('Kill command failed:', result);
       }
     } catch {
       toast.error('Failed to send kill command');
-    } finally {
-      setLoadingActions(prev => ({ ...prev, [appName]: '' }));
-    }
-  };
-
-  const handleBlockApp = async (appName: string) => {
-    if (!deviceId) {
-      toast.error('No device linked');
-      return;
-    }
-    setLoadingActions(prev => ({ ...prev, [appName]: 'block' }));
-    try {
-      const res = await fetch(`${API_BASE}/commands/kill`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deviceId, appName }),
-      });
-      if (res.ok) {
-        toast.success(`Block command sent for ${appName}`);
-      } else {
-        toast.error('Failed to send block command');
-      }
-    } catch {
-      toast.error('Failed to send block command');
     } finally {
       setLoadingActions(prev => ({ ...prev, [appName]: '' }));
     }
@@ -107,15 +97,23 @@ export function ActivityTable({ apps, isLoading, deviceId, onRefresh }: Activity
     }
     setLoadingActions(prev => ({ ...prev, [appName]: 'relaunch' }));
     try {
-      const res = await fetch(`${API_BASE}/commands/relaunch`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deviceId, appName }),
-      });
-      if (res.ok) {
+      const result: any = await baseApiRequest(
+        `${API_BASE}/commands/relaunch`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ deviceId, appName }),
+        },
+        { isAccessTokenRequird: true }
+      );
+
+      if (result?.success === true) {
+        console.log('Relaunch command succeeded:', result);
         toast.success(`Relaunch command sent for ${appName}`);
       } else {
-        toast.error('Failed to send relaunch command');
+        const msg = result?.error || result?.message || 'Failed to send relaunch command';
+        toast.error(msg);
+        console.log('Relaunch command failed:', result);
       }
     } catch {
       toast.error('Failed to send relaunch command');
@@ -123,6 +121,106 @@ export function ActivityTable({ apps, isLoading, deviceId, onRefresh }: Activity
       setLoadingActions(prev => ({ ...prev, [appName]: '' }));
     }
   };
+
+  // const handleBlockApp = async (appName: string) => {
+  //   if (!deviceId) {
+  //     toast.error('No device linked');
+  //     return;
+  //   }
+  //   setLoadingActions(prev => ({ ...prev, [appName]: 'block' }));
+  //   try {
+  //     const res = await fetch(`${API_BASE}/commands/kill`, {
+  //       method: 'POST',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify({ deviceId, appName }),
+  //     });
+  //     if (res.ok) {
+  //       toast.success(`Block command sent for ${appName}`);
+  //     } else {
+  //       toast.error('Failed to send block command');
+  //     }
+  //   } catch {
+  //     toast.error('Failed to send block command');
+  //   } finally {
+  //     setLoadingActions(prev => ({ ...prev, [appName]: '' }));
+  //   }
+  // };
+
+  // const handleRelaunchApp = async (appName: string) => {
+  //   if (!deviceId) {
+  //     toast.error('No device linked');
+  //     return;
+  //   }
+  //   setLoadingActions(prev => ({ ...prev, [appName]: 'relaunch' }));
+  //   try {
+  //     const res = await fetch(`${API_BASE}/commands/relaunch`, {
+  //       method: 'POST',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify({ deviceId, appName }),
+  //     });
+  //     if (res.ok) {
+  //       toast.success(`Relaunch command sent for ${appName}`);
+  //     } else {
+  //       toast.error('Failed to send relaunch command');
+  //     }
+  //   } catch {
+  //     toast.error('Failed to send relaunch command');
+  //   } finally {
+  //     setLoadingActions(prev => ({ ...prev, [appName]: '' }));
+  //   }
+  // };
+
+
+
+  //  const handleKillApp = async (appName: string) => {
+  //     if (!selectedChild) return;
+  //     const child = childrenList.find(c => c.id === selectedChild.id);
+  //     const deviceId = child?.devices?.[0]?.id;
+  //     if (!deviceId) {
+  //       toast.error('No device linked to this child');
+  //       return;
+  //     }
+  //     try {
+  //       const result = await baseApiRequest(`${API_BASE}/commands/kill`, {
+  //         method: 'POST',
+  //         headers: { 'Content-Type': 'application/json' },
+  //         body: JSON.stringify({ deviceId, appName }),
+  //       }, { isAccessTokenRequird: true });
+  //       if (result && (result as any).status === 'Failure') {
+  //         toast.error((result as any).message || 'Failed to send kill command');
+  //       } else {
+  //         toast.success(`Kill command sent for ${appName}`);
+  //       }
+  //     } catch (err) {
+  //       console.error('Kill command error:', err);
+  //       toast.error('Failed to send kill command');
+  //     }
+  //   };
+  
+    // const handleRelaunchApp = async (appName: string) => {
+    //   if (!selectedChild) return;
+    //   const child = childrenList.find(c => c.id === selectedChild.id);
+    //   const deviceId = child?.devices?.[0]?.id;
+    //   if (!deviceId) {
+    //     toast.error('No device linked to this child');
+    //     return;
+    //   }
+    //   try {
+    //     const result = await baseApiRequest(`${API_BASE}/commands/relaunch`, {
+    //       method: 'POST',
+    //       headers: { 'Content-Type': 'application/json' },
+    //       body: JSON.stringify({ deviceId, appName }),
+    //     }, { isAccessTokenRequird: true });
+    //     if (result && (result as any).status === 'Failure') {
+    //       toast.error((result as any).message || 'Failed to send relaunch command');
+    //     } else {
+    //       toast.success(`Relaunch command sent for ${appName}`);
+    //     }
+    //   } catch (err) {
+    //     console.error('Relaunch command error:', err);
+    //     toast.error('Failed to send relaunch command');
+    //   }
+    // };
 
   if (isLoading) {
     return (

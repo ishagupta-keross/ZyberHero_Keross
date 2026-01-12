@@ -43,6 +43,18 @@ const addChildSchema = z.object({
   gender: z.string().min(1, 'Gender is required'),
   dob: z.string().refine((s) => !isNaN(Date.parse(s)), { message: 'DOB is required' }),
   phone: z.string().optional().refine((s) => !s || /^[0-9+\-()\s]{7,20}$/.test(s), { message: 'Invalid phone number' }),
+  // Optional: link a registered device to the child so `/api/children` returns
+  // `devices[]` and activity/alerts can be scoped per-child.
+  deviceId: z
+    .preprocess(
+      (val) => {
+        if (val === '' || val == null) return undefined;
+        const n = Number(val);
+        return Number.isFinite(n) ? n : undefined;
+      },
+      z.number().int().positive().optional()
+    )
+    .optional(),
 });
 
 type AddChildForm = z.infer<typeof addChildSchema>;
@@ -123,11 +135,14 @@ export default function ParentDashboard() {
   const { errors } = formState;
   const dobInputRef = useRef<HTMLInputElement | null>(null);
   const today = new Date().toISOString().slice(0, 10);
+  const didInitRef = useRef(false);
 
-  const fetchChildren = useCallback(async () => {
+  const fetchChildren = useCallback(async (options?: { keepSelectedChildId?: string | number | null }) => {
     setIsLoadingChildren(true);
     try {
-      
+      // IMPORTANT: Backend children endpoint is /api/children.
+      // Our API_BASE already includes '/api', so children URL is `${API_BASE}/children`.
+      // This endpoint returns a `children` array, and each child includes `devices`.
       const response = await baseApiRequest(`${API_BASE}/children`, { method: 'GET' }, { isAccessTokenRequird: true });
 
       if (response && (response as any).status === 'Failure') {
@@ -163,40 +178,70 @@ export default function ParentDashboard() {
         level: child.level || 1,
         points: child.points || 0,
         badges: child.badges || [],
-        devices: child.devices || [],
+        devices: Array.isArray(child.devices)
+          ? child.devices.map((d: any) => ({
+              ...d,
+              // Support multiple backend shapes: {id, deviceUuid} OR {deviceId, deviceUuid}
+              id: d?.id ?? d?.deviceId ?? d?.device_id ?? d?.deviceID,
+              deviceUuid: d?.deviceUuid ?? d?.device_uuid ?? d?.uuid,
+            }))
+          : [],
       }));
-  setChildrenList(mappedChildren);
-      if (mappedChildren.length > 0 && !selectedChild) {
-        setSelectedChild(mappedChildren[0]);
-      }
+      setChildrenList(mappedChildren);
+      // Only set a default selection on the initial load (or when selection no longer exists).
+      // Avoid keying this off `selectedChild` in the callback deps, as that causes re-fetches
+      // and makes the page feel like it "re-renders again and again".
+      setSelectedChild((prev) => {
+        const keepId = options?.keepSelectedChildId ?? prev?.id;
+        if (!keepId) return mappedChildren[0] ?? null;
+        const stillExists = mappedChildren.find((c) => c.id === keepId);
+        return stillExists ?? mappedChildren[0] ?? null;
+      });
     } catch (error) {
       console.error('Error fetching children:', error);
       toast.error('Failed to load children data');
     } finally {
       setIsLoadingChildren(false);
     }
-  }, [selectedChild]);
+  }, []);
 
   const fetchActivityData = useCallback(async (childId: number | string, isInitialLoad = true) => {
     if (isInitialLoad) setIsLoadingActivity(true);
     try {
-      // Determine whether to call by deviceId or childId. Backend expects
-      // numeric Long values for these params. Avoid sending placeholder ids
-      // like "child-..." which will cause server-side parsing errors (500).
+      // Determine which device(s) belong to the selected child and ALWAYS scope
+      // activity/summary calls to those device ids. This mirrors alerts behaviour.
+      //
+      // Rationale: previously we preferred `devices[0].deviceUuid`, and if
+      // devices were empty/incorrect or the first device was identical across
+      // children, every child would build the same summary URL -> same data.
+
       const childObj = childrenList.find((c) => c.id === childId);
-      let query = '';
-      const firstDeviceId = childObj?.devices?.[0]?.id;
-      const numericChildId = typeof childId === 'number' ? childId : Number(childId);
-      if (firstDeviceId && Number.isFinite(Number(firstDeviceId))) {
-        query = `deviceId=${firstDeviceId}`;
-      } else if (Number.isFinite(numericChildId)) {
-        query = `childId=${numericChildId}`;
-      } else {
-        // Don't throw here — new local children may have placeholder ids and
-        // no linked devices yet. Gracefully skip fetching activity to avoid
-        // crashing the UI; show empty activity state instead.
-        console.warn('Skipping activity fetch: invalid child id and no device available', { childId, childObj });
-        // Ensure we set loading state appropriately and return early.
+
+      const preferredDeviceId = (childObj as any)?.deviceId;
+      const deviceIdsFromDevices = Array.isArray(childObj?.devices)
+        ? childObj!.devices
+            .map((d) => Number(d?.id))
+            .filter((n) => Number.isFinite(n) && n > 0)
+        : [];
+
+      const allDeviceIds: number[] = [
+        ...(Number.isFinite(Number(preferredDeviceId)) && Number(preferredDeviceId) > 0 ? [Number(preferredDeviceId)] : []),
+        ...deviceIdsFromDevices,
+      ];
+      const uniqueDeviceIds = Array.from(new Set(allDeviceIds));
+
+      console.log('[activity] selected child:', {
+        childId,
+        resolvedChild: childObj,
+        preferredDeviceId,
+        deviceIdsFromDevices,
+        uniqueDeviceIds,
+        devices: childObj?.devices,
+      });
+
+      if (uniqueDeviceIds.length === 0) {
+       
+        console.warn('[activity] Skipping: no device linked to child', { childId, childObj });
         if (isInitialLoad) setIsLoadingActivity(false);
         setActivityApps([]);
         setLiveApps([]);
@@ -204,13 +249,83 @@ export default function ParentDashboard() {
         return;
       }
 
-      const resp = await baseApiRequest(`${API_BASE}/summary/daily-comparison?${query}`, { method: 'GET' }, { isAccessTokenRequird: true });
-      if (resp && (resp as any).status === 'Failure') {
-        throw new Error((resp as any).message || 'Failed to fetch activity');
+      const responses: any[] = [];
+      for (const deviceId of uniqueDeviceIds) {
+        const summaryUrl = `${API_BASE}/summary/daily-comparison?deviceId=${deviceId}`;
+        console.log('[activity] Summary URL:', summaryUrl);
+        try {
+          const r = await baseApiRequest(summaryUrl, { method: 'GET' }, { isAccessTokenRequird: true });
+          if (r && (r as any).status === 'Failure') {
+            console.warn('[activity] Summary Failure', { deviceId, message: (r as any).message });
+            continue;
+          }
+          responses.push(r ?? {});
+        } catch (err) {
+          console.error('[activity] Summary fetch error', { deviceId, err });
+        }
       }
-      const data: any = resp ?? {};
 
-      console.log("Activity Data:------------------------", data);
+      // Merge apps + totals across devices.
+      const appAgg = new Map<
+        string,
+        {
+          app: string;
+          windowTitle: string;
+          focusedTimeSeconds: number;
+          screenTimeSeconds: number;
+        }
+      >();
+      let totalFocusedSeconds = 0;
+      let totalScreenSeconds = 0;
+
+      for (const r of responses) {
+        const apps: any[] = Array.isArray((r as any)?.apps) ? (r as any).apps : [];
+        for (const a of apps) {
+          const name = String(a?.app ?? '').trim();
+          if (!name) continue;
+          const key = name.toLowerCase();
+          const prev = appAgg.get(key);
+          const focused = Number(a?.focusedTimeSeconds ?? 0) || 0;
+          const screen = Number(a?.screenTimeSeconds ?? 0) || 0;
+          if (!prev) {
+            appAgg.set(key, {
+              app: name,
+              windowTitle: a?.windowTitle ?? '',
+              focusedTimeSeconds: focused,
+              screenTimeSeconds: screen,
+            });
+          } else {
+            prev.focusedTimeSeconds += focused;
+            prev.screenTimeSeconds += screen;
+            // Keep the latest non-empty title
+            if (!prev.windowTitle && a?.windowTitle) prev.windowTitle = a.windowTitle;
+          }
+        }
+
+        totalFocusedSeconds += Number((r as any)?.summary?.totalFocusedSeconds ?? 0) || 0;
+        totalScreenSeconds += Number((r as any)?.summary?.totalScreenSeconds ?? 0) || 0;
+      }
+
+      const mergedApps: ActivityApp[] = Array.from(appAgg.values())
+        .map((a) => {
+          const total = a.focusedTimeSeconds + a.screenTimeSeconds;
+          return {
+            app: a.app,
+            windowTitle: a.windowTitle,
+            focusedTimeSeconds: a.focusedTimeSeconds,
+            screenTimeSeconds: a.screenTimeSeconds,
+            focusedTimeFormatted: formatDuration(a.focusedTimeSeconds),
+            screenTimeFormatted: formatDuration(a.screenTimeSeconds),
+            totalTimeSeconds: total,
+          };
+        })
+        .sort((a, b) => (b.totalTimeSeconds ?? 0) - (a.totalTimeSeconds ?? 0));
+
+      const data: any = {
+        apps: mergedApps,
+        summary: { totalFocusedSeconds, totalScreenSeconds },
+      };
+      console.log('Activity Data (merged):------------------------', data);
 
       const child = childrenList.find(c => c.id === childId);
       const deviceIds = child?.devices?.map(d => d.id) || [];
@@ -282,23 +397,66 @@ export default function ParentDashboard() {
     }
   }, [childrenList]);
 
-  const fetchAlerts = useCallback(async (childId: number | string) => {
+  const fetchAlerts = useCallback(async (childOrDeviceId: number | string) => {
     setIsLoadingAlerts(true);
     try {
-      const child = childrenList.find(c => c.id === childId);
-      const deviceIds = child?.devices?.map(d => d.id) || [];
-      
+      // Try to find a child first. If not found, treat the input as a deviceId
+      // (this allows calling fetchAlerts(2) like Postman). This makes the
+      // function more flexible and debuggable.
+      const child = childrenList.find(c => c.id === childOrDeviceId);
+
+      let deviceIds: number[] = [];
+
+      if (child && Array.isArray(child.devices) && child.devices.length > 0) {
+        deviceIds = child.devices.map(d => Number(d.id)).filter(Number.isFinite);
+      } else {
+        // Interpret the passed value as a device id (or numeric child id stored
+        // as device id in some environments). Accept numeric strings too.
+        const numeric = typeof childOrDeviceId === 'number' ? childOrDeviceId : Number(childOrDeviceId);
+        if (Number.isFinite(numeric)) deviceIds = [numeric];
+      }
+
+      if (deviceIds.length === 0) {
+        console.warn('Skipping alerts fetch: no device id available', { childOrDeviceId, child });
+        setAlerts([]);
+        return;
+      }
+
       let allAlerts: Alert[] = [];
       for (const deviceId of deviceIds) {
         try {
-          const response = await fetch(`${API_BASE}/alerts/list?deviceId=${deviceId}`);
-          if (response.ok) {
-            const data = await response.json();
-            allAlerts = [...allAlerts, ...(data.alerts || [])];
+          const url = `${API_BASE}/alerts/list?deviceId=${deviceId}`;
+          console.debug('Fetching alerts from', url);
+          const resp = await baseApiRequest(url, { method: 'GET' }, { isAccessTokenRequird: true });
+          console.log("Alerts deviceid:------------------------", deviceId);
+          if (!resp) {
+            console.warn('No response for alerts fetch', { deviceId });
+            continue;
           }
-        } catch {}
+          if ((resp as any).status === 'Failure') {
+            console.warn('API returned Failure for alerts', { deviceId, message: (resp as any).message });
+            continue;
+          }
+
+          const data: any = resp ?? {};
+
+          console.log("Alerts Data:------------------------", data);
+          // Normalize shapes: Alert[], { alerts: Alert[] }, { alert: Alert[] }
+          if (Array.isArray(data)) {
+            allAlerts = [...allAlerts, ...data];
+          } else if (Array.isArray(data.alerts)) {
+            allAlerts = [...allAlerts, ...data.alerts];
+          } else if (Array.isArray(data.alert)) {
+            allAlerts = [...allAlerts, ...data.alert];
+          } else {
+            // Unexpected payload shape — log it to aid debugging.
+            console.warn('Unexpected alerts payload shape', { deviceId, data });
+          }
+        } catch (err) {
+          console.error('Error fetching alerts for device', deviceId, err);
+        }
       }
-      
+
       allAlerts.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
       setAlerts(allAlerts);
     } catch (error) {
@@ -316,11 +474,10 @@ export default function ParentDashboard() {
       let totalCount = 0;
       for (const deviceId of deviceIds) {
         try {
-          const response = await fetch(`${API_BASE}/alerts/count-last-24h?deviceId=${deviceId}`);
-          if (response.ok) {
-            const data = await response.json();
-            totalCount += data.count || 0;
-          }
+          const resp = await baseApiRequest(`${API_BASE}/alerts/count-last-24h?deviceId=${deviceId}`, { method: 'GET' }, { isAccessTokenRequird: true });
+          if (resp && (resp as any).status === 'Failure') continue;
+          const data = resp ?? {};
+          totalCount += data.count || 0;
         } catch {}
       }
       
@@ -339,17 +496,18 @@ export default function ParentDashboard() {
       return;
     }
     try {
-      const res = await fetch(`${API_BASE}/commands/kill`, {
+      const result = await baseApiRequest(`${API_BASE}/commands/kill`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ deviceId, appName }),
-      });
-      if (res.ok) {
-        toast.success(`Kill command sent for ${appName}`);
+      }, { isAccessTokenRequird: true });
+      if (result && (result as any).status === 'Failure') {
+        toast.error((result as any).message || 'Failed to send kill command');
       } else {
-        toast.error('Failed to send kill command');
+        toast.success(`Kill command sent for ${appName}`);
       }
-    } catch {
+    } catch (err) {
+      console.error('Kill command error:', err);
       toast.error('Failed to send kill command');
     }
   };
@@ -363,17 +521,18 @@ export default function ParentDashboard() {
       return;
     }
     try {
-      const res = await fetch(`${API_BASE}/commands/relaunch`, {
+      const result = await baseApiRequest(`${API_BASE}/commands/relaunch`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ deviceId, appName }),
-      });
-      if (res.ok) {
-        toast.success(`Relaunch command sent for ${appName}`);
+      }, { isAccessTokenRequird: true });
+      if (result && (result as any).status === 'Failure') {
+        toast.error((result as any).message || 'Failed to send relaunch command');
       } else {
-        toast.error('Failed to send relaunch command');
+        toast.success(`Relaunch command sent for ${appName}`);
       }
-    } catch {
+    } catch (err) {
+      console.error('Relaunch command error:', err);
       toast.error('Failed to send relaunch command');
     }
   };
@@ -418,15 +577,29 @@ export default function ParentDashboard() {
   };
 
   useEffect(() => {
+    // NOTE: In development, React 18 StrictMode intentionally mounts components
+    // twice to detect side-effects. This makes effects run twice. We guard the
+    // "init" path to prevent duplicate network calls / state thrash.
+    if (didInitRef.current) return;
+    didInitRef.current = true;
+
     const currentUser = getUser();
-    // if (!currentUser || currentUser.role !== 'parent') {
-    //   router.push('/login');
-    //   return;
-    // }
     setUser(currentUser);
-    console.log (currentUser);
-    fetchChildren();
-  }, [router, fetchChildren]);
+    console.log(currentUser);
+
+    (async () => {
+      try {
+        const tokenHelpers = await import('@/app/utils/token-management/index');
+        if (tokenHelpers?.refreshTokens) {
+          await tokenHelpers.refreshTokens();
+        }
+      } catch (err) {
+        console.warn('Proactive token refresh failed (nonfatal):', err);
+      } finally {
+        await fetchChildren();
+      }
+    })();
+  }, [fetchChildren]);
 
   useEffect(() => {
     if (selectedChild?.id) {
@@ -518,9 +691,10 @@ export default function ParentDashboard() {
 
   const handleAddChild = async (data: AddChildForm) => {
     setIsSubmitting(true);
-    const { name, age, gender, dob, phone } = data;
+    const { name, age, gender, dob, phone, deviceId } = data;
 
-    const payload = { name, age, gender, dob, phone };
+    const payload: any = { name, age, gender, dob, phone };
+    if (deviceId != null) payload.deviceId = deviceId;
 
     try {
       // Use the server action to create a child. It attaches tokens server-side.
@@ -534,7 +708,8 @@ export default function ParentDashboard() {
         throw new Error((result as any).message || 'Failed to add child');
       }
 
-      const newChildData = result ?? {};
+  // Backend returns { success: true, child: {...} }
+  const newChildData = (result as any)?.child ?? result ?? {};
 
       const child: Child = {
         id: newChildData.id || newChildData.deviceId || `child-${Date.now()}`,
@@ -548,6 +723,13 @@ export default function ParentDashboard() {
         dob: payload.dob,
         phone: phone || undefined,
         deviceId: newChildData.deviceId,
+        devices: Array.isArray(newChildData.devices)
+          ? newChildData.devices.map((d: any) => ({
+              id: d?.id ?? d?.deviceId ?? d?.device_id,
+              deviceUuid: d?.deviceUuid ?? d?.device_uuid ?? d?.uuid,
+              machineName: d?.machineName,
+            }))
+          : [],
       };
 
       setChildrenList(prev => [child, ...prev]);
@@ -636,7 +818,10 @@ export default function ParentDashboard() {
                     className={`cursor-pointer transition-all ${
                       selectedChild?.id === child.id ? 'ring-2 ring-primary shadow-lg' : 'hover:shadow-md'
                     }`}
-                    onClick={() => setSelectedChild(child)}
+                    onClick={() => {
+                      // Avoid redundant state updates that re-trigger effects.
+                      if (selectedChild?.id !== child.id) setSelectedChild(child);
+                    }}
                   >
                     <CardContent className="p-6">
                       <div className="flex items-center gap-4">
@@ -1212,6 +1397,15 @@ export default function ParentDashboard() {
               <label className="block text-sm font-medium text-muted-foreground mb-1">Phone (optional)</label>
               <Input {...register('phone')} placeholder="Phone number" />
               {errors?.phone && <p className="text-xs text-red-600 mt-1">{errors.phone.message}</p>}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-muted-foreground mb-1">Device ID (optional)</label>
+              <Input {...register('deviceId')} type="number" placeholder="e.g. 1" />
+              {errors?.deviceId && <p className="text-xs text-red-600 mt-1">{String(errors.deviceId.message)}</p>}
+              <p className="text-xs text-muted-foreground mt-1">
+                If you enter a registered device id, it will be linked to this child (and activity/alerts will work per child).
+              </p>
             </div>
 
             <div className="flex justify-end gap-2 mt-4">

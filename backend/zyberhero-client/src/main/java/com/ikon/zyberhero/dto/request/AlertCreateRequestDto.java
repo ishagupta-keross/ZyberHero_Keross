@@ -1,9 +1,10 @@
 package com.ikon.zyberhero.dto.request;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.time.Instant;
 
 import lombok.Data;
-
+@JsonIgnoreProperties(ignoreUnknown = true)
 @Data
 public class AlertCreateRequestDto {
     private String deviceUuid;

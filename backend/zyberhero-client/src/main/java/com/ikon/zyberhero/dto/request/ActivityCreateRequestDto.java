@@ -4,7 +4,9 @@ import java.time.Instant;
 
 import lombok.Data;
 
+
 @Data
+
 public class ActivityCreateRequestDto {
     private Instant timestamp;
     private Instant localTimestamp;

@@ -1,11 +1,14 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { MapPin, Navigation, Clock, RefreshCw, Loader2 } from 'lucide-react';
+import { MapPin, Navigation, Clock, RefreshCw, Loader2, Plus, Trash2, Check } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import dynamic from 'next/dynamic';
+import { toast } from 'sonner';
+import { AddSafezoneModal } from './AddSafezoneModal';
+import { motion } from 'framer-motion';
 
 import { baseApiRequest } from '@/app/utils/apiRequests/baseApiRequest';
 
@@ -19,6 +22,16 @@ interface LocationData {
   accuracy?: number;
   altitude?: number;
   timestamp: string;
+}
+
+interface Zone {
+  id: number;
+  name: string;
+  radius: number; // in miles for existing compatibility
+  status: 'inside' | 'outside';
+  color: string;
+  lat?: number;
+  lng?: number;
 }
 
 interface LocationMapProps {
@@ -52,12 +65,19 @@ const Polyline = dynamic(
   { ssr: false }
 );
 
-function LeafletMap({ 
-  currentLocation, 
-  locationHistory 
-}: { 
+const Circle = dynamic(
+  () => import('react-leaflet').then((mod) => mod.Circle),
+  { ssr: false }
+);
+
+function LeafletMap({
+  currentLocation,
+  locationHistory,
+  zones
+}: {
   currentLocation: LocationData | null;
   locationHistory: LocationData[];
+  zones: Zone[];
 }) {
   const [isClient, setIsClient] = useState(false);
   const [L, setL] = useState<any>(null);
@@ -77,7 +97,7 @@ function LeafletMap({
     );
   }
 
-  const defaultCenter: [number, number] = currentLocation 
+  const defaultCenter: [number, number] = currentLocation
     ? [currentLocation.latitude, currentLocation.longitude]
     : [28.6139, 77.2090]; // Default to Delhi
 
@@ -108,10 +128,10 @@ function LeafletMap({
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      
+
       {currentLocation && (
-        <Marker 
-          position={[currentLocation.latitude, currentLocation.longitude]} 
+        <Marker
+          position={[currentLocation.latitude, currentLocation.longitude]}
           icon={customIcon}
         >
           <Popup>
@@ -146,7 +166,7 @@ function LeafletMap({
       ))}
 
       {pathCoordinates.length > 1 && (
-        <Polyline 
+        <Polyline
           positions={pathCoordinates}
           color="#3b82f6"
           weight={3}
@@ -154,6 +174,23 @@ function LeafletMap({
           dashArray="5, 10"
         />
       )}
+
+      {zones.map(zone => (
+        zone.lat && zone.lng ? (
+          <Circle
+            key={zone.id}
+            center={[zone.lat, zone.lng]}
+            // Convert miles back to meters for Leaflet (approx)
+            radius={zone.radius * 1609.34}
+            pathOptions={{
+              color: zone.color.replace('bg-', '').replace('-500', ''), // This is a rough hack, better to store hex
+              fillColor: zone.color.replace('bg-', '').replace('-500', ''),
+              opacity: 0.5,
+              fillOpacity: 0.2
+            }}
+          />
+        ) : null
+      ))}
     </MapContainer>
   );
 }
@@ -165,6 +202,14 @@ export function LocationMap({ childId, childName, deviceIds }: LocationMapProps)
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Geofencing State
+  const [zones, setZones] = useState<Zone[]>([
+    { id: 1, name: 'Home', radius: 0.5, status: 'inside', color: 'bg-green-500' },
+    { id: 2, name: 'School', radius: 0.3, status: 'outside', color: 'bg-blue-500' },
+    { id: 3, name: 'Park', radius: 0.2, status: 'outside', color: 'bg-yellow-500' },
+  ]);
+  const [isAddZoneModalOpen, setIsAddZoneModalOpen] = useState(false);
+
   const fetchLocationData = useCallback(async () => {
     if (deviceIds.length === 0) {
       setError('No devices linked to this child');
@@ -174,10 +219,10 @@ export function LocationMap({ childId, childName, deviceIds }: LocationMapProps)
 
     try {
       setError(null);
-      
+
       // Fetch latest location from first device
       const deviceId = deviceIds[0];
-      
+
       const [latestResp, historyResp] = await Promise.all([
         baseApiRequest(
           `${API_BASE}/location/latest?deviceId=${deviceId}`,
@@ -236,11 +281,35 @@ export function LocationMap({ childId, childName, deviceIds }: LocationMapProps)
     fetchLocationData();
   };
 
+  const handleAddZone = (newZoneData: { name: string; lat: number; lng: number; radius: number; address: string }) => {
+    // Convert radius from meters (AddSafezoneModal) to miles (existing UI)
+    // 1 meter = 0.000621371 miles
+    const radiusInMiles = parseFloat((newZoneData.radius * 0.000621371).toFixed(2));
+
+    const newZone: Zone = {
+      id: Date.now(),
+      name: newZoneData.name,
+      radius: radiusInMiles,
+      status: 'outside', // Default status
+      color: 'bg-purple-500', // Default color for new zones
+      lat: newZoneData.lat,
+      lng: newZoneData.lng
+    };
+
+    setZones([...zones, newZone]);
+    toast.success(`Safe zone "${newZoneData.name}" created!`);
+  };
+
+  const deleteZone = (id: number) => {
+    setZones(zones.filter(z => z.id !== id));
+    toast.success('Safe zone removed');
+  };
+
   const formatTimestamp = (timestamp: string) => {
     const date = new Date(timestamp);
     const now = new Date();
     const diff = now.getTime() - date.getTime();
-    
+
     if (diff < 60000) return 'Just now';
     if (diff < 3600000) return `${Math.floor(diff / 60000)} minutes ago`;
     if (diff < 86400000) return `${Math.floor(diff / 3600000)} hours ago`;
@@ -258,18 +327,18 @@ export function LocationMap({ childId, childName, deviceIds }: LocationMapProps)
 
   return (
     <div className="space-y-6">
-      <div className="grid md:grid-cols-3 gap-6">
-        <div className="md:col-span-2">
-          <Card>
+      <div className="grid md:grid-cols-3 gap-6 items-stretch">
+        <div className="md:col-span-2 h-full">
+          <Card className="h-full flex flex-col">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <MapPin className="w-5 h-5 text-primary" />
                   <CardTitle>Live Location</CardTitle>
                 </div>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
+                <Button
+                  size="sm"
+                  variant="outline"
                   onClick={handleRefresh}
                   disabled={isRefreshing}
                 >
@@ -283,7 +352,7 @@ export function LocationMap({ childId, childName, deviceIds }: LocationMapProps)
               </div>
               <CardDescription>Real-time tracking for {childName}</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex-1">
               {error ? (
                 <div className="h-[400px] bg-muted rounded-lg flex items-center justify-center">
                   <div className="text-center">
@@ -307,9 +376,10 @@ export function LocationMap({ childId, childName, deviceIds }: LocationMapProps)
                     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
                     crossOrigin=""
                   />
-                  <LeafletMap 
+                  <LeafletMap
                     currentLocation={currentLocation}
                     locationHistory={locationHistory}
+                    zones={zones}
                   />
                 </>
               )}
@@ -317,59 +387,124 @@ export function LocationMap({ childId, childName, deviceIds }: LocationMapProps)
           </Card>
         </div>
 
-        <Card>
-          <CardHeader>
+        <div className="h-full">
+          {/* Location Details Card */}
+          <Card className="h-full flex flex-col">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Navigation className="w-5 h-5" />
+                Location Details
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 flex-1">
+              {currentLocation ? (
+                <>
+                  <div className="p-3 bg-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground">Coordinates</p>
+                    <p className="font-mono text-sm">
+                      {currentLocation.latitude.toFixed(6)}, {currentLocation.longitude.toFixed(6)}
+                    </p>
+                  </div>
+
+                  {currentLocation.accuracy && (
+                    <div className="p-3 bg-muted rounded-lg">
+                      <p className="text-sm text-muted-foreground">Accuracy</p>
+                      <p className="font-semibold">±{currentLocation.accuracy.toFixed(0)} meters</p>
+                    </div>
+                  )}
+
+                  {currentLocation.altitude && (
+                    <div className="p-3 bg-muted rounded-lg">
+                      <p className="text-sm text-muted-foreground">Altitude</p>
+                      <p className="font-semibold">{currentLocation.altitude.toFixed(0)} meters</p>
+                    </div>
+                  )}
+
+                  <div className="p-3 bg-muted rounded-lg">
+                    <p className="text-sm text-muted-foreground">Last Updated</p>
+                    <p className="font-semibold">{formatTimestamp(currentLocation.timestamp)}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(currentLocation.timestamp).toLocaleString()}
+                    </p>
+                  </div>
+
+                  <Badge className="w-full justify-center bg-green-100 text-green-700 mt-auto">
+                    <Clock className="w-3 h-3 mr-1" />
+                    Tracking Active
+                  </Badge>
+                </>
+              ) : (
+                <div className="text-center py-8 flex-1 flex flex-col justify-center">
+                  <MapPin className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-muted-foreground text-sm">No location data</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Safe Zones Card */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2">
-              <Navigation className="w-5 h-5" />
-              Location Details
+              Safe Zones
             </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {currentLocation ? (
-              <>
-                <div className="p-3 bg-muted rounded-lg">
-                  <p className="text-sm text-muted-foreground">Coordinates</p>
-                  <p className="font-mono text-sm">
-                    {currentLocation.latitude.toFixed(6)}, {currentLocation.longitude.toFixed(6)}
-                  </p>
-                </div>
-                
-                {currentLocation.accuracy && (
-                  <div className="p-3 bg-muted rounded-lg">
-                    <p className="text-sm text-muted-foreground">Accuracy</p>
-                    <p className="font-semibold">±{currentLocation.accuracy.toFixed(0)} meters</p>
+            <Button size="sm" onClick={() => setIsAddZoneModalOpen(true)} className="gradient-cyan-blue text-white h-8 text-xs">
+              <Plus className="w-3 h-3 mr-1" />
+              Add SafeZone
+            </Button>
+          </div>
+          <CardDescription>Manage geofencing boundaries</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex-col space-y-2">
+            {zones.map((zone) => (
+              <motion.div
+                key={zone.id}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="p-3 border rounded-lg hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-3 h-3 rounded-full ${zone.color}`}></div>
+                    <div>
+                      <h4 className="font-semibold text-sm">{zone.name}</h4>
+                      <p className="text-xs text-muted-foreground">{zone.radius} mi</p>
+                    </div>
                   </div>
-                )}
-
-                {currentLocation.altitude && (
-                  <div className="p-3 bg-muted rounded-lg">
-                    <p className="text-sm text-muted-foreground">Altitude</p>
-                    <p className="font-semibold">{currentLocation.altitude.toFixed(0)} meters</p>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6"
+                      onClick={() => deleteZone(zone.id)}
+                    >
+                      <Trash2 className="w-3 h-3 text-destructive" />
+                    </Button>
                   </div>
-                )}
-
-                <div className="p-3 bg-muted rounded-lg">
-                  <p className="text-sm text-muted-foreground">Last Updated</p>
-                  <p className="font-semibold">{formatTimestamp(currentLocation.timestamp)}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(currentLocation.timestamp).toLocaleString()}
-                  </p>
                 </div>
-
-                <Badge className="w-full justify-center bg-green-100 text-green-700">
-                  <Clock className="w-3 h-3 mr-1" />
-                  Tracking Active
-                </Badge>
-              </>
-            ) : (
-              <div className="text-center py-8">
-                <MapPin className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-muted-foreground text-sm">No location data</p>
+                <div className="flex items-center mt-1">
+                  {zone.status === 'inside' ? (
+                    <Badge variant="secondary" className="bg-green-100 text-green-800 text-[10px] h-5 px-1.5">
+                      Inside
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary" className="text-[10px] h-5 px-1.5">Outside</Badge>
+                  )}
+                </div>
+              </motion.div>
+            ))}
+            {zones.length === 0 && (
+              <div className="col-span-full text-center py-4 text-muted-foreground text-sm">
+                No safe zones created yet. Click "Add" to create one.
               </div>
             )}
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {locationHistory.length > 0 && (
         <Card>
@@ -408,6 +543,12 @@ export function LocationMap({ childId, childName, deviceIds }: LocationMapProps)
           </CardContent>
         </Card>
       )}
+
+      <AddSafezoneModal
+        isOpen={isAddZoneModalOpen}
+        onClose={() => setIsAddZoneModalOpen(false)}
+        onSave={handleAddZone}
+      />
     </div>
   );
 }

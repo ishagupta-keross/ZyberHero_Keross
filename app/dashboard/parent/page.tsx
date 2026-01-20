@@ -102,7 +102,7 @@
 //   const [showGeofencing, setShowGeofencing] = useState(false);
 //   const [showAddChild, setShowAddChild] = useState(false);
 //   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
 //   const [childrenList, setChildrenList] = useState<Child[]>([]);
 //   const [isLoadingChildren, setIsLoadingChildren] = useState(true);
 //   const [activityApps, setActivityApps] = useState<ActivityApp[]>([]);
@@ -127,7 +127,7 @@
 //   const fetchChildren = useCallback(async () => {
 //     setIsLoadingChildren(true);
 //     try {
-      
+
 //       const response = await baseApiRequest(`${API_BASE}/children`, { method: 'GET' }, { isAccessTokenRequird: true });
 
 //       if (response && (response as any).status === 'Failure') {
@@ -231,13 +231,13 @@
 //         } catch {}
 //       }
 //       setLiveApps(liveAppsList);
-      
+
 //       const appsWithLiveStatus = (data.apps || []).map((app: ActivityApp) => ({
 //         ...app,
 //         isLive: liveAppsList.some(la => la.appName.toLowerCase() === app.app.toLowerCase()),
 //         windowTitle: liveAppsList.find(la => la.appName.toLowerCase() === app.app.toLowerCase())?.windowTitle || app.windowTitle,
 //       }));
-      
+
 //       setActivityApps(appsWithLiveStatus);
 //       setScreenTimeSummary({
 //         totalScreenTime: formatDuration((data.summary?.totalFocusedSeconds || 0) + (data.summary?.totalScreenSeconds || 0)),
@@ -253,7 +253,7 @@
 //     try {
 //       const child = childrenList.find(c => c.id === childId);
 //       const deviceIds = child?.devices?.map(d => d.id) || [];
-      
+
 //       let liveAppsList: LiveApp[] = [];
 //       for (const deviceId of deviceIds) {
 //         try {
@@ -268,7 +268,7 @@
 //         } catch {}
 //       }
 //       setLiveApps(liveAppsList);
-      
+
 //       setActivityApps(prevApps => prevApps.map(app => {
 //         const liveApp = liveAppsList.find(la => la.appName.toLowerCase() === app.app.toLowerCase());
 //         return {
@@ -287,7 +287,7 @@
 //     try {
 //       const child = childrenList.find(c => c.id === childId);
 //       const deviceIds = child?.devices?.map(d => d.id) || [];
-      
+
 //       let allAlerts: Alert[] = [];
 //       for (const deviceId of deviceIds) {
 //         try {
@@ -298,7 +298,7 @@
 //           }
 //         } catch {}
 //       }
-      
+
 //       allAlerts.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 //       setAlerts(allAlerts);
 //     } catch (error) {
@@ -312,7 +312,7 @@
 //     try {
 //       const child = childrenList.find(c => c.id === childId);
 //       const deviceIds = child?.devices?.map(d => d.id) || [];
-      
+
 //       let totalCount = 0;
 //       for (const deviceId of deviceIds) {
 //         try {
@@ -323,7 +323,7 @@
 //           }
 //         } catch {}
 //       }
-      
+
 //       setBlockedContentCount(totalCount);
 //     } catch (error) {
 //       console.error('Error fetching blocked content count:', error);
@@ -439,7 +439,7 @@
 //   // Poll live status every 2.5 seconds for real-time updates
 //   useEffect(() => {
 //     if (!selectedChild?.id) return;
-    
+
 //     const intervalId = setInterval(() => {
 //       fetchLiveStatus(selectedChild.id);
 //     }, 2500);
@@ -450,7 +450,7 @@
 //   // Refresh activity data every 30 seconds for time updates
 //   useEffect(() => {
 //     if (!selectedChild?.id) return;
-    
+
 //     const intervalId = setInterval(() => {
 //       fetchActivityData(selectedChild.id, false);
 //     }, 30000);
@@ -461,7 +461,7 @@
 //   // Poll blocked content count every 10 seconds
 //   useEffect(() => {
 //     if (!selectedChild?.id) return;
-    
+
 //     const intervalId = setInterval(() => {
 //       fetchBlockedContentCount(selectedChild.id);
 //     }, 10000);
@@ -510,7 +510,7 @@
 //     toast.success('Alert escalated to investigator team');
 //     setShowAlertDetail(false);
 //   };
-  
+
 //   const handleViewAlertDetail = (alert: any) => {
 //     setSelectedAlert(alert);
 //     setShowAlertDetail(true);
@@ -565,7 +565,7 @@
 //       setIsSubmitting(false);
 //     }
 //   };
-  
+
 
 //   const selectedChildDeviceId = selectedChild?.devices?.[0]?.id;
 //   const selectedChildDeviceIds = selectedChild?.devices?.map(d => d.id) || [];
@@ -604,7 +604,7 @@
 //   </div>
 // </div>
 
-          
+
 //           {isLoadingChildren ? (
 //             <div className="flex items-center justify-center py-12">
 //               <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
@@ -1281,7 +1281,7 @@
 //                   </div>
 //                 </div>
 //               )}
-              
+
 //               <div>
 //                 <label className="text-sm font-medium text-muted-foreground">Time Detected</label>
 //                 <p className="font-medium">{new Date(selectedAlert.timestamp).toLocaleString()}</p>
@@ -1322,7 +1322,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Shield, AlertTriangle, TrendingUp, Trophy, Clock, Ban, Send, User, AlertOctagon, Gamepad2, Video, BookOpen, Activity, MapPin, Calendar, Loader2, CheckCircle, UserPlus, Eye, EyeOff, RotateCcw, XCircle, Play, MonitorDown } from 'lucide-react'; 
+import { Shield, AlertTriangle, TrendingUp, Trophy, Clock, Ban, Send, User, AlertOctagon, Gamepad2, Video, BookOpen, Activity, MapPin, Calendar, Loader2, CheckCircle, UserPlus, Eye, EyeOff, RotateCcw, XCircle, Play, MonitorDown } from 'lucide-react';
 import { getUser } from '@/lib/auth';
 import { Header } from '@/components/shared/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -1332,7 +1332,6 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
-import { GeofencingMap } from '@/components/parent/GeofencingMap';
 import { MediaMonitoring } from '@/components/parent/MediaMonitoring';
 import { ActivityTable } from '@/components/parent/ActivityTable';
 import dynamic from 'next/dynamic';
@@ -1433,7 +1432,7 @@ export default function ParentDashboard() {
   const [showGeofencing, setShowGeofencing] = useState(false);
   const [showAddChild, setShowAddChild] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   const [childrenList, setChildrenList] = useState<Child[]>([]);
   const [isLoadingChildren, setIsLoadingChildren] = useState(true);
   const [activityApps, setActivityApps] = useState<ActivityApp[]>([]);
@@ -1499,11 +1498,11 @@ export default function ParentDashboard() {
         badges: child.badges || [],
         devices: Array.isArray(child.devices)
           ? child.devices.map((d: any) => ({
-              ...d,
-              // Support multiple backend shapes: {id, deviceUuid} OR {deviceId, deviceUuid}
-              id: d?.id ?? d?.deviceId ?? d?.device_id ?? d?.deviceID,
-              deviceUuid: d?.deviceUuid ?? d?.device_uuid ?? d?.uuid,
-            }))
+            ...d,
+            // Support multiple backend shapes: {id, deviceUuid} OR {deviceId, deviceUuid}
+            id: d?.id ?? d?.deviceId ?? d?.device_id ?? d?.deviceID,
+            deviceUuid: d?.deviceUuid ?? d?.device_uuid ?? d?.uuid,
+          }))
           : [],
       }));
       setChildrenList(mappedChildren);
@@ -1539,8 +1538,8 @@ export default function ParentDashboard() {
       const preferredDeviceId = (childObj as any)?.deviceId;
       const deviceIdsFromDevices = Array.isArray(childObj?.devices)
         ? childObj!.devices
-            .map((d) => Number(d?.id))
-            .filter((n) => Number.isFinite(n) && n > 0)
+          .map((d) => Number(d?.id))
+          .filter((n) => Number.isFinite(n) && n > 0)
         : [];
 
       const allDeviceIds: number[] = [
@@ -1559,7 +1558,7 @@ export default function ParentDashboard() {
       });
 
       if (uniqueDeviceIds.length === 0) {
-       
+
         console.warn('[activity] Skipping: no device linked to child', { childId, childObj });
         if (isInitialLoad) setIsLoadingActivity(false);
         setActivityApps([]);
@@ -1662,16 +1661,16 @@ export default function ParentDashboard() {
           } else if (liveData) {
             liveAppsList = [...liveAppsList, liveData];
           }
-        } catch {}
+        } catch { }
       }
       setLiveApps(liveAppsList);
-      
+
       const appsWithLiveStatus = (data.apps || []).map((app: ActivityApp) => ({
         ...app,
         isLive: liveAppsList.some(la => la.appName.toLowerCase() === app.app.toLowerCase()),
         windowTitle: liveAppsList.find(la => la.appName.toLowerCase() === app.app.toLowerCase())?.windowTitle || app.windowTitle,
       }));
-      
+
       setActivityApps(appsWithLiveStatus);
       setScreenTimeSummary({
         totalScreenTime: formatDuration((data.summary?.totalFocusedSeconds || 0) + (data.summary?.totalScreenSeconds || 0)),
@@ -1687,7 +1686,7 @@ export default function ParentDashboard() {
     try {
       const child = childrenList.find(c => c.id === childId);
       const deviceIds = child?.devices?.map(d => d.id) || [];
-      
+
       let liveAppsList: LiveApp[] = [];
       for (const deviceId of deviceIds) {
         try {
@@ -1699,10 +1698,10 @@ export default function ParentDashboard() {
           } else if (liveData) {
             liveAppsList = [...liveAppsList, liveData];
           }
-        } catch {}
+        } catch { }
       }
       setLiveApps(liveAppsList);
-      
+
       setActivityApps(prevApps => prevApps.map(app => {
         const liveApp = liveAppsList.find(la => la.appName.toLowerCase() === app.app.toLowerCase());
         return {
@@ -1789,7 +1788,7 @@ export default function ParentDashboard() {
     try {
       const child = childrenList.find(c => c.id === childId);
       const deviceIds = child?.devices?.map(d => d.id) || [];
-      
+
       let totalCount = 0;
       for (const deviceId of deviceIds) {
         try {
@@ -1797,9 +1796,9 @@ export default function ParentDashboard() {
           if (resp && (resp as any).status === 'Failure') continue;
           const data = resp ?? {};
           totalCount += data.count || 0;
-        } catch {}
+        } catch { }
       }
-      
+
       setBlockedContentCount(totalCount);
     } catch (error) {
       console.error('Error fetching blocked content count:', error);
@@ -1931,7 +1930,7 @@ export default function ParentDashboard() {
   // Poll live status every 2.5 seconds for real-time updates
   useEffect(() => {
     if (!selectedChild?.id) return;
-    
+
     const intervalId = setInterval(() => {
       fetchLiveStatus(selectedChild.id);
     }, 2500);
@@ -1942,7 +1941,7 @@ export default function ParentDashboard() {
   // Refresh activity data every 30 seconds for time updates
   useEffect(() => {
     if (!selectedChild?.id) return;
-    
+
     const intervalId = setInterval(() => {
       fetchActivityData(selectedChild.id, false);
     }, 30000);
@@ -1953,7 +1952,7 @@ export default function ParentDashboard() {
   // Poll blocked content count every 10 seconds
   useEffect(() => {
     if (!selectedChild?.id) return;
-    
+
     const intervalId = setInterval(() => {
       fetchBlockedContentCount(selectedChild.id);
     }, 10000);
@@ -2002,7 +2001,7 @@ export default function ParentDashboard() {
     toast.success('Alert escalated to investigator team');
     setShowAlertDetail(false);
   };
-  
+
   const handleViewAlertDetail = (alert: any) => {
     setSelectedAlert(alert);
     setShowAlertDetail(true);
@@ -2027,8 +2026,8 @@ export default function ParentDashboard() {
         throw new Error((result as any).message || 'Failed to add child');
       }
 
-  // Backend returns { success: true, child: {...} }
-  const newChildData = (result as any)?.child ?? result ?? {};
+      // Backend returns { success: true, child: {...} }
+      const newChildData = (result as any)?.child ?? result ?? {};
 
       const child: Child = {
         id: newChildData.id || newChildData.deviceId || `child-${Date.now()}`,
@@ -2044,10 +2043,10 @@ export default function ParentDashboard() {
         deviceId: newChildData.deviceId,
         devices: Array.isArray(newChildData.devices)
           ? newChildData.devices.map((d: any) => ({
-              id: d?.id ?? d?.deviceId ?? d?.device_id,
-              deviceUuid: d?.deviceUuid ?? d?.device_uuid ?? d?.uuid,
-              machineName: d?.machineName,
-            }))
+            id: d?.id ?? d?.deviceId ?? d?.device_id,
+            deviceUuid: d?.deviceUuid ?? d?.device_uuid ?? d?.uuid,
+            machineName: d?.machineName,
+          }))
           : [],
       };
 
@@ -2066,7 +2065,7 @@ export default function ParentDashboard() {
       setIsSubmitting(false);
     }
   };
-  
+
 
   const selectedChildDeviceId = selectedChild?.devices?.[0]?.id;
   const selectedChildDeviceIds = selectedChild?.devices?.map(d => d.id) || [];
@@ -2077,35 +2076,35 @@ export default function ParentDashboard() {
 
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="mb-8">
-         <div className="flex items-center justify-between mb-4">
-  <h2 className="text-2xl font-bold">Your Children</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold">Your Children</h2>
 
-  {/* Right-side container for both buttons */}
-  <div className="flex items-center gap-3">
-    <Button
-      size="lg"
-      onClick={() => {
-        const link = document.createElement("a");
-        link.href = "/ZyberHero_setup_v1.0.0.exe";
-        link.download = "ZyberHero_setup_v1.0.0.exe";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }}
-      className="font-child bg-green-600 hover:bg-green-700 text-white"
-    >
-      <MonitorDown className="w-5 h-5 mr-2" />
-      Download ZyberHero Now!
-    </Button>
+            {/* Right-side container for both buttons */}
+            <div className="flex items-center gap-3">
+              <Button
+                size="lg"
+                onClick={() => {
+                  const link = document.createElement("a");
+                  link.href = "/ZyberHero_setup_v1.0.0.exe";
+                  link.download = "ZyberHero_setup_v1.0.0.exe";
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }}
+                className="font-child bg-green-600 hover:bg-green-700 text-white"
+              >
+                <MonitorDown className="w-5 h-5 mr-2" />
+                Download ZyberHero Now!
+              </Button>
 
-    <Button onClick={() => setShowAddChild(true)}>
-      <UserPlus className="w-4 h-4 mr-2" />
-      Add Child
-    </Button>
-  </div>
-</div>
+              <Button onClick={() => setShowAddChild(true)}>
+                <UserPlus className="w-4 h-4 mr-2" />
+                Add Child
+              </Button>
+            </div>
+          </div>
 
-          
+
           {isLoadingChildren ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
@@ -2134,9 +2133,8 @@ export default function ParentDashboard() {
                   whileTap={{ scale: 0.98 }}
                 >
                   <Card
-                    className={`cursor-pointer transition-all ${
-                      selectedChild?.id === child.id ? 'ring-2 ring-primary shadow-lg' : 'hover:shadow-md'
-                    }`}
+                    className={`cursor-pointer transition-all ${selectedChild?.id === child.id ? 'ring-2 ring-primary shadow-lg' : 'hover:shadow-md'
+                      }`}
                     onClick={() => {
                       // Avoid redundant state updates that re-trigger effects.
                       if (selectedChild?.id !== child.id) setSelectedChild(child);
@@ -2221,203 +2219,202 @@ export default function ParentDashboard() {
             </div>
           ) : (
             <>
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid md:grid-cols-4 gap-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium">New Alerts</CardTitle>
-                  <AlertTriangle className="w-4 h-4 text-destructive" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">{alerts.length}</div>
-                  <p className="text-xs text-muted-foreground">Requires attention</p>
-                </CardContent>
-              </Card>
+              <TabsContent value="overview" className="space-y-6">
+                <div className="grid md:grid-cols-4 gap-4">
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                      <CardTitle className="text-sm font-medium">New Alerts</CardTitle>
+                      <AlertTriangle className="w-4 h-4 text-destructive" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold">{alerts.length}</div>
+                      <p className="text-xs text-muted-foreground">Requires attention</p>
+                    </CardContent>
+                  </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium">Screen Time</CardTitle>
-                  <Clock className="w-4 h-4 text-primary" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">{screenTimeSummary.totalScreenTime}</div>
-                  <p className="text-xs text-muted-foreground">Today&apos;s total</p>
-                </CardContent>
-              </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                      <CardTitle className="text-sm font-medium">Screen Time</CardTitle>
+                      <Clock className="w-4 h-4 text-primary" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold">{screenTimeSummary.totalScreenTime}</div>
+                      <p className="text-xs text-muted-foreground">Today&apos;s total</p>
+                    </CardContent>
+                  </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium">Active Apps</CardTitle>
-                  <Activity className="w-4 h-4 text-green-500" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">{activityApps.filter(a => a.isLive).length}</div>
-                  <p className="text-xs text-muted-foreground">Running now</p>
-                </CardContent>
-              </Card>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                      <CardTitle className="text-sm font-medium">Active Apps</CardTitle>
+                      <Activity className="w-4 h-4 text-green-500" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold">{activityApps.filter(a => a.isLive).length}</div>
+                      <p className="text-xs text-muted-foreground">Running now</p>
+                    </CardContent>
+                  </Card>
 
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium">Content Blocked</CardTitle>
-                  <Shield className="w-4 h-4 text-green-500" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold">{blockedContentCount}</div>
-                  <p className="text-xs text-muted-foreground">In the last 24 hours</p>
-                </CardContent>
-              </Card>
-            </div>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                      <CardTitle className="text-sm font-medium">Content Blocked</CardTitle>
+                      <Shield className="w-4 h-4 text-green-500" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-3xl font-bold">{blockedContentCount}</div>
+                      <p className="text-xs text-muted-foreground">In the last 24 hours</p>
+                    </CardContent>
+                  </Card>
+                </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Screen Time Summary</CardTitle>
-                  <CardDescription>Today&apos;s usage breakdown</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
-                    <span className="text-sm font-medium">Total Screen Time</span>
-                    <span className="text-lg font-bold text-orange-500">{screenTimeSummary.totalScreenTime}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
-                    <span className="text-sm font-medium">Apps Used Today</span>
-                    <span className="text-lg font-bold">{activityApps.length}</span>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Safety Achievements</CardTitle>
-                  <CardDescription>Badges earned by {selectedChild.name}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-3 gap-4">
-                    {['⭐', '🎯', '🦸', '🛡️', '🎮', '📺'].map((emoji, index) => (
-                      <div
-                        key={index}
-                        className={`p-4 rounded-lg text-center ${
-                          index < selectedChild.badges.length
-                            ? 'bg-gradient-to-br from-yellow-100 to-orange-100 dark:from-yellow-900 dark:to-orange-900'
-                            : 'bg-gray-100 dark:bg-gray-800 opacity-40'
-                        }`}
-                      >
-                        <div className="text-4xl">{emoji}</div>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Screen Time Summary</CardTitle>
+                      <CardDescription>Today&apos;s usage breakdown</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                        <span className="text-sm font-medium">Total Screen Time</span>
+                        <span className="text-lg font-bold text-orange-500">{screenTimeSummary.totalScreenTime}</span>
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
+                      <div className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                        <span className="text-sm font-medium">Apps Used Today</span>
+                        <span className="text-lg font-bold">{activityApps.length}</span>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-          <TabsContent value="alerts" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <AlertTriangle className="w-6 h-6 text-red-500" />
-                  <div>
-                    <CardTitle>All Alerts for {selectedChild.name}</CardTitle>
-                    <CardDescription>Review new and previously managed security alerts.</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {isLoadingAlerts ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-                    </div>
-                  ) : alerts.length === 0 ? (
-                    <div className="text-center py-8">
-                      <CheckCircle className="w-12 h-12 mx-auto mb-2 text-green-500" />
-                      <p className="text-muted-foreground">No alerts detected at this time.</p>
-                    </div>
-                  ) : (
-                    alerts.map((alert, index) => {
-                      const details = parseAlertDetails(alert.details);
-                      const severity = getAlertSeverity(alert.type);
-                      return (
-                        <motion.div
-                          key={alert.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: index * 0.05 }}
-                          className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                          onClick={() => handleViewAlertDetail({ ...alert, details, severity })}
-                        >
-                          <div className="flex items-start justify-between mb-2">
-                            <div>
-                              <h4 className="font-semibold flex items-center gap-2">
-                                <span className="h-3 w-3 rounded-full bg-red-500 animate-pulse" />
-                                {alert.type}
-                              </h4>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                App: {alert.appName} | Device ID: {alert.deviceId}
-                              </p>
-                            </div>
-                            <div className="flex flex-col items-end gap-1">
-                              <Badge className={severityColors[severity]}>
-                                {severity}
-                              </Badge>
-                              <span className="text-xs text-muted-foreground">
-                                {new Date(alert.timestamp).toLocaleTimeString()}
-                              </span>
-                            </div>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Safety Achievements</CardTitle>
+                      <CardDescription>Badges earned by {selectedChild.name}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-3 gap-4">
+                        {['⭐', '🎯', '🦸', '🛡️', '🎮', '📺'].map((emoji, index) => (
+                          <div
+                            key={index}
+                            className={`p-4 rounded-lg text-center ${index < selectedChild.badges.length
+                              ? 'bg-gradient-to-br from-yellow-100 to-orange-100 dark:from-yellow-900 dark:to-orange-900'
+                              : 'bg-gray-100 dark:bg-gray-800 opacity-40'
+                              }`}
+                          >
+                            <div className="text-4xl">{emoji}</div>
                           </div>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                            {details.windowTitle || details.url || details.raw || 'View details'}
-                          </p>
-                        </motion.div>
-                      );
-                    })
-                  )}
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+              </TabsContent>
 
-          <TabsContent value="activity" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Activity className="w-6 h-6" />
-                    <div>
-                      <CardTitle>Activity Logs</CardTitle>
-                      <CardDescription>Today&apos;s app usage for {selectedChild.name}</CardDescription>
+              <TabsContent value="alerts" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center gap-3">
+                      <AlertTriangle className="w-6 h-6 text-red-500" />
+                      <div>
+                        <CardTitle>All Alerts for {selectedChild.name}</CardTitle>
+                        <CardDescription>Review new and previously managed security alerts.</CardDescription>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-4 text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground">Screen Time:</span>
-                      <span className="font-bold text-orange-500">{screenTimeSummary.totalScreenTime}</span>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {isLoadingAlerts ? (
+                        <div className="flex items-center justify-center py-8">
+                          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                        </div>
+                      ) : alerts.length === 0 ? (
+                        <div className="text-center py-8">
+                          <CheckCircle className="w-12 h-12 mx-auto mb-2 text-green-500" />
+                          <p className="text-muted-foreground">No alerts detected at this time.</p>
+                        </div>
+                      ) : (
+                        alerts.map((alert, index) => {
+                          const details = parseAlertDetails(alert.details);
+                          const severity = getAlertSeverity(alert.type);
+                          return (
+                            <motion.div
+                              key={alert.id}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: index * 0.05 }}
+                              className="border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                              onClick={() => handleViewAlertDetail({ ...alert, details, severity })}
+                            >
+                              <div className="flex items-start justify-between mb-2">
+                                <div>
+                                  <h4 className="font-semibold flex items-center gap-2">
+                                    <span className="h-3 w-3 rounded-full bg-red-500 animate-pulse" />
+                                    {alert.type}
+                                  </h4>
+                                  <p className="text-sm text-muted-foreground mt-1">
+                                    App: {alert.appName} | Device ID: {alert.deviceId}
+                                  </p>
+                                </div>
+                                <div className="flex flex-col items-end gap-1">
+                                  <Badge className={severityColors[severity]}>
+                                    {severity}
+                                  </Badge>
+                                  <span className="text-xs text-muted-foreground">
+                                    {new Date(alert.timestamp).toLocaleTimeString()}
+                                  </span>
+                                </div>
+                              </div>
+                              <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                                {details.windowTitle || details.url || details.raw || 'View details'}
+                              </p>
+                            </motion.div>
+                          );
+                        })
+                      )}
                     </div>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <ActivityTable
-                  apps={activityApps}
-                  isLoading={isLoadingActivity}
-                  deviceId={selectedChildDeviceId}
-                  onRefresh={() => fetchActivityData(selectedChild.id)}
-                />
-              </CardContent>
-            </Card>
-          </TabsContent>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-          <TabsContent value="learning" className="space-y-4">
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-16">
-                <Gamepad2 className="w-16 h-16 text-muted-foreground mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Coming Soon</h3>
-                <p className="text-muted-foreground text-center max-w-md">
-                  Learning progress and educational games data will be available here.
-                </p>
-              </CardContent>
-            </Card>
-            {/* TODO: Uncomment when data is available
+              <TabsContent value="activity" className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Activity className="w-6 h-6" />
+                        <div>
+                          <CardTitle>Activity Logs</CardTitle>
+                          <CardDescription>Today&apos;s app usage for {selectedChild.name}</CardDescription>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4 text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted-foreground">Screen Time:</span>
+                          <span className="font-bold text-orange-500">{screenTimeSummary.totalScreenTime}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <ActivityTable
+                      apps={activityApps}
+                      isLoading={isLoadingActivity}
+                      deviceId={selectedChildDeviceId}
+                      onRefresh={() => fetchActivityData(selectedChild.id)}
+                    />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="learning" className="space-y-4">
+                <Card>
+                  <CardContent className="flex flex-col items-center justify-center py-16">
+                    <Gamepad2 className="w-16 h-16 text-muted-foreground mb-4" />
+                    <h3 className="text-xl font-semibold mb-2">Coming Soon</h3>
+                    <p className="text-muted-foreground text-center max-w-md">
+                      Learning progress and educational games data will be available here.
+                    </p>
+                  </CardContent>
+                </Card>
+                {/* TODO: Uncomment when data is available
             <div className="grid md:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
@@ -2484,42 +2481,42 @@ export default function ParentDashboard() {
               </Card>
             </div>
             */}
-          </TabsContent>
+              </TabsContent>
 
-          <TabsContent value="location">
-            <LocationMap
-              childId={selectedChild.id}
-              childName={selectedChild.name}
-              deviceIds={selectedChildDeviceIds}
-            />
-          </TabsContent>
+              <TabsContent value="location">
+                <LocationMap
+                  childId={selectedChild.id}
+                  childName={selectedChild.name}
+                  deviceIds={selectedChildDeviceIds}
+                />
+              </TabsContent>
 
-          <TabsContent value="media">
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-16">
-                <Video className="w-16 h-16 text-muted-foreground mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Coming Soon</h3>
-                <p className="text-muted-foreground text-center max-w-md">
-                  Media monitoring features will be available here.
-                </p>
-              </CardContent>
-            </Card>
-            {/* TODO: Uncomment when data is available
+              <TabsContent value="media">
+                <Card>
+                  <CardContent className="flex flex-col items-center justify-center py-16">
+                    <Video className="w-16 h-16 text-muted-foreground mb-4" />
+                    <h3 className="text-xl font-semibold mb-2">Coming Soon</h3>
+                    <p className="text-muted-foreground text-center max-w-md">
+                      Media monitoring features will be available here.
+                    </p>
+                  </CardContent>
+                </Card>
+                {/* TODO: Uncomment when data is available
             <MediaMonitoring />
             */}
-          </TabsContent>
+              </TabsContent>
 
-          <TabsContent value="blocked" className="space-y-4">
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-16">
-                <Shield className="w-16 h-16 text-muted-foreground mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Coming Soon</h3>
-                <p className="text-muted-foreground text-center max-w-md">
-                  Blocked content data will be available here.
-                </p>
-              </CardContent>
-            </Card>
-            {/* TODO: Uncomment when data is available
+              <TabsContent value="blocked" className="space-y-4">
+                <Card>
+                  <CardContent className="flex flex-col items-center justify-center py-16">
+                    <Shield className="w-16 h-16 text-muted-foreground mb-4" />
+                    <h3 className="text-xl font-semibold mb-2">Coming Soon</h3>
+                    <p className="text-muted-foreground text-center max-w-md">
+                      Blocked content data will be available here.
+                    </p>
+                  </CardContent>
+                </Card>
+                {/* TODO: Uncomment when data is available
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-3">
@@ -2575,19 +2572,19 @@ export default function ParentDashboard() {
               </CardContent>
             </Card>
             */}
-          </TabsContent>
+              </TabsContent>
 
-          <TabsContent value="threats" className="space-y-4">
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-16">
-                <AlertOctagon className="w-16 h-16 text-muted-foreground mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Coming Soon</h3>
-                <p className="text-muted-foreground text-center max-w-md">
-                  Threat detection data will be available here.
-                </p>
-              </CardContent>
-            </Card>
-            {/* TODO: Uncomment when data is available
+              <TabsContent value="threats" className="space-y-4">
+                <Card>
+                  <CardContent className="flex flex-col items-center justify-center py-16">
+                    <AlertOctagon className="w-16 h-16 text-muted-foreground mb-4" />
+                    <h3 className="text-xl font-semibold mb-2">Coming Soon</h3>
+                    <p className="text-muted-foreground text-center max-w-md">
+                      Threat detection data will be available here.
+                    </p>
+                  </CardContent>
+                </Card>
+                {/* TODO: Uncomment when data is available
             <Card className="border-red-200 dark:border-red-900">
               <CardHeader className="bg-red-50 dark:bg-red-950/30">
                 <div className="flex items-center gap-3">
@@ -2606,7 +2603,7 @@ export default function ParentDashboard() {
               </CardContent>
             </Card>
             */}
-          </TabsContent>
+              </TabsContent>
             </>
           )}
         </Tabs>
@@ -2624,7 +2621,13 @@ export default function ParentDashboard() {
               Set up safe zones and receive alerts when your child enters or leaves designated areas.
             </DialogDescription>
           </DialogHeader>
-          {selectedChild && <GeofencingMap childName={selectedChild.name} />}
+          {selectedChild && (
+            <LocationMap
+              childId={selectedChild.id}
+              childName={selectedChild.name}
+              deviceIds={selectedChildDeviceIds}
+            />
+          )}
           <div className="flex justify-end">
             <Button onClick={() => {
               setShowGeofencing(false);
@@ -2684,7 +2687,7 @@ export default function ParentDashboard() {
                             try {
                               if (typeof dobRegister.ref === 'function') dobRegister.ref(el);
                               else if (dobRegister.ref) (dobRegister.ref as any).current = el;
-                            } catch {}
+                            } catch { }
                             (dobInputRef as any).current = el;
                           }}
                         />
@@ -2794,7 +2797,7 @@ export default function ParentDashboard() {
                   </div>
                 </div>
               )}
-              
+
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Time Detected</label>
                 <p className="font-medium">{new Date(selectedAlert.timestamp).toLocaleString()}</p>

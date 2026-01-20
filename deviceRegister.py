@@ -9,7 +9,7 @@ import ctypes
 from ctypes import Structure, POINTER, c_ulong, c_char, c_uint, c_byte, byref
 
 # --- CONFIGURATION ---
-API_BASE_URL = "https://zyberhero.com/api"
+API_BASE_URL = " https://zyberhero.com/api"
 BASE_TOKEN ="https://ikoncloud-dev.keross.com/ikon-api"
 
 # --- LOGIN CREDENTIALS FOR TOKEN ---

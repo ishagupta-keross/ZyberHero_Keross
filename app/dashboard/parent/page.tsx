@@ -1353,7 +1353,7 @@ import { z } from 'zod';
 // we proxy through our Next server route at `/api/children` so the server-side
 // `baseApiRequest` can attach tokens from cookies. Keep other backend calls
 // pointed at the backend directly if there are no proxy routes.
-const API_BASE = 'http://localhost:8060/api';
+const API_BASE = ' https://zyberhero.com/api';
 
 const addChildSchema = z.object({
   name: z.string().min(1, 'Name is required'),

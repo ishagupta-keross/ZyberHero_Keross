@@ -3,9 +3,9 @@ spring:
     name: zyberhero
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/zyberhero
-    username: appuser                                                   
-    password: apppassword123                                                    
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://77.68.24.254:5432/zyberhero}
+    username: ${SPRING_DATASOURCE_USERNAME:appuser}
+    password: ${SPRING_DATASOURCE_PASSWORD:apppassword123}
     driver-class-name: org.postgresql.Driver                           
     hikari:
       connectionTimeout: 20000
@@ -30,8 +30,22 @@ spring:
 logging:
   level:
     com.ikon: DEBUG
-  file:
-    name: "../logs/${spring.application.name}-app.log"
+  # Prefer container stdout/stderr when running in Docker. If you want file logging
+  # inside the container, set LOG_FILE_PATH env or uncomment and change the path.
+  # file:
+  #   name: "/var/log/zyberhero/${spring.application.name}-app.log"
 
 server:
   port: 8060
+  # bind to all interfaces when running in a container
+  address: 0.0.0.0
+
+# Expose actuator endpoints for health checks (useful for container orchestration)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
